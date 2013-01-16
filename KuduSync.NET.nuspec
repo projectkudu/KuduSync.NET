@@ -5,7 +5,7 @@
     <version>0.1.0</version>
     <authors>amitap</authors>
     <owners>amitap</owners>
-    <licenseUrl>https://github.com/projectkudu/kudu/blob/master/LICENSE.txt</licenseUrl>
+    <licenseUrl>https://github.com/projectkudu/KuduSync.NET/blob/master/LICENSE.txt</licenseUrl>
     <projectUrl>https://github.com/projectkudu/KuduSync.NET</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Tool for syncing files for deployment, will only copy changed files and delete files that doesn't exists in the destination but only if they were part of the previous deployment.</description>
