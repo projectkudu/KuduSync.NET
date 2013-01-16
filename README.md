@@ -7,7 +7,7 @@ This is the .NET version of [KuduSync](https://github.com/projectkudu/KuduSync).
 
 ### License
 
-[Apache License 2.0](https://github.com/projectkudu/kudu/blob/master/LICENSE.txt)
+[Apache License 2.0](https://github.com/projectkudu/KuduSync.NET/blob/master/LICENSE.txt)
 
 
 ### Questions?
