@@ -26,6 +26,11 @@ namespace KuduSync.NET
             _previousManifest = new HashSet<string>(DeploymentManifest.LoadManifestFile(options.PreviousManifestFilePath).Paths, StringComparer.OrdinalIgnoreCase);
             _ignoreList = BuildIgnoreList(options.Ignore);
             _whatIf = options.WhatIf;
+
+            if (_whatIf)
+            {
+                throw new NotSupportedException("WhatIf flag is currently not supported");
+            }
         }
 
         private HashSet<string> BuildIgnoreList(string ignore)
