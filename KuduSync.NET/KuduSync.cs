@@ -52,7 +52,7 @@ namespace KuduSync.NET
 
         public void Run()
         {
-            Logger.Log("KuduSync.NET from: \"{0}\" to: \"{1}\"", _from, _to);
+            Logger.Log("KuduSync.NET from: {0} to: {1}", _from, _to);
 
             SmartCopy(_from, _to, new DirectoryInfoWrapper(new DirectoryInfo(_from)), new DirectoryInfoWrapper(new DirectoryInfo(_to)));
 
