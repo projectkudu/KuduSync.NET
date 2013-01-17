@@ -38,6 +38,12 @@ namespace KuduSync.NET
             if (!String.IsNullOrEmpty(ignore))
             {
                 var ignoreList = ignore.Split(';').Select(s => s.Trim());
+
+                if (ignoreList.Any(s => s.Contains('*') || s.Contains('/') || s.Contains('\\')))
+                {
+                    throw new NotSupportedException("Wildcard matching (or \\) is not supported");
+                }
+
                 return new HashSet<string>(ignoreList, StringComparer.OrdinalIgnoreCase);
             }
 
@@ -46,7 +52,7 @@ namespace KuduSync.NET
 
         public void Run()
         {
-            Logger.Log("Kudu sync from: \"{0}\" to: \"{1}\"", _from, _to);
+            Logger.Log("KuduSync.NET from: \"{0}\" to: \"{1}\"", _from, _to);
 
             SmartCopy(_from, _to, new DirectoryInfoWrapper(new DirectoryInfo(_from)), new DirectoryInfoWrapper(new DirectoryInfo(_to)));
 
@@ -74,6 +80,11 @@ namespace KuduSync.NET
 
             foreach (var destFile in destFilesLookup.Values)
             {
+                if (IgnorePath(destFile))
+                {
+                    continue;
+                }
+
                 // If the file doesn't exist in the source, only delete if:
                 // 1. We have no previous directory
                 // 2. We have a previous directory and the file exists there
@@ -89,7 +100,6 @@ namespace KuduSync.NET
 
             foreach (var sourceFile in sourceFilesLookup.Values)
             {
-                // Skip the .deployment file
                 if (IgnorePath(sourceFile))
                 {
                     continue;
