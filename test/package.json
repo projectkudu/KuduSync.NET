@@ -1,0 +1,32 @@
+{
+  "name": "kudusync.net",
+  "author": "Outercurve Foundation",
+  "version": "0.0.1",
+  "description": "Tool for syncing files for deployment, will only copy changed files and delete files that doesn't exists in the destination but only if they were part of the previous deployment.",
+  "tags": [
+    "azure",
+    "deployment"
+  ],
+  "keywords": [
+    "node",
+    "azure",
+    "deployment"
+  ],
+  "engines": {
+    "node": ">= 0.6.20"
+  },
+  "scripts": {
+    "test": "mocha -u tdd functionalTests -R spec --slow 3000 --timeout 6000"
+  },
+  "licenses": [
+    {
+      "type": "Apache",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0"
+    }
+  ],
+  "devDependencies": {
+    "typescript": "0.8.0",
+    "mocha": "1.6.0",
+    "should": "1.2.1"
+  }
+}
