@@ -10,16 +10,16 @@ namespace KuduSync.NET
         private StreamWriter _writer;
         private int _maxLogLines;
 
+        /// <summary>
+        /// Logger class
+        /// </summary>
+        /// <param name="maxLogLines">sets the verbosity, 0 is verbose, less is quiet, more is the number of maximum log lines to write.</param>
         public Logger(int maxLogLines)
         {
             var stream = Console.OpenStandardOutput();
             _writer = new StreamWriter(stream);
             _maxLogLines = maxLogLines;
         }
-
-        /// <summary>
-        /// MaxLogLines sets the verbosity, 0 is verbose, less is quiet, more is the number of maximum log lines to write.
-        /// </summary>
 
         public void Log(string format, params object[] args)
         {
