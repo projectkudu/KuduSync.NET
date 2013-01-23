@@ -11,6 +11,8 @@ namespace KuduSync.NET
         private static readonly string[] _projectFileExtensions = new[] { ".csproj", ".vbproj" };
         private static readonly List<string> _emptyList = Enumerable.Empty<string>().ToList();
 
+        private readonly Logger _logger;
+
         private string _from;
         private string _to;
         private DeploymentManifest _nextManifest;
@@ -18,8 +20,10 @@ namespace KuduSync.NET
         private HashSet<string> _ignoreList;
         private bool _whatIf;
 
-        public KuduSync(KuduSyncOptions options)
+        public KuduSync(KuduSyncOptions options, Logger logger)
         {
+            _logger = logger;
+
             _from = Path.GetFullPath(options.From);
             _to = Path.GetFullPath(options.To);
             _nextManifest = new DeploymentManifest(options.NextManifestFilePath);
@@ -52,7 +56,7 @@ namespace KuduSync.NET
 
         public void Run()
         {
-            Logger.Log("KuduSync.NET from: {0} to: {1}", _from, _to);
+            _logger.Log("KuduSync.NET from: {0} to: {1}", _from, _to);
 
             SmartCopy(_from, _to, new DirectoryInfoWrapper(new DirectoryInfo(_from)), new DirectoryInfoWrapper(new DirectoryInfo(_to)));
 
@@ -93,7 +97,7 @@ namespace KuduSync.NET
                 string previousPath = destFile.FullName.Substring(destinationPath.Length).TrimStart('\\');
                 if (!sourceFilesLookup.ContainsKey(destFile.Name) && DoesPathExistsInManifest(previousPath))
                 {
-                    Logger.Log("Deleting file: {0}", destFile.FullName);
+                    _logger.Log("Deleting file: {0}", destFile.FullName);
                     destFile.Delete();
                 }
             }
@@ -119,7 +123,7 @@ namespace KuduSync.NET
                 // Otherwise, copy the file
                 string path = FileSystemHelpers.GetDestinationPath(sourcePath, destinationPath, sourceFile);
 
-                Logger.Log("Copying file from: {0} to: {1}", sourceFile.FullName, path);
+                _logger.Log("Copying file from: {0} to: {1}", sourceFile.FullName, path);
                 OperationManager.Attempt(() => sourceFile.CopyTo(path, overwrite: true));
             }
 
@@ -135,7 +139,7 @@ namespace KuduSync.NET
                 string previousPath = destSubDirectory.FullName.Substring(destinationPath.Length).TrimStart('\\');
                 if (!sourceDirectoryLookup.ContainsKey(destSubDirectory.Name) && DoesPathExistsInManifest(previousPath))
                 {
-                    Logger.Log("Deleting directory: {0}", destSubDirectory.FullName);
+                    _logger.Log("Deleting directory: {0}", destSubDirectory.FullName);
                     destSubDirectory.Delete(recursive: true);
                 }
             }

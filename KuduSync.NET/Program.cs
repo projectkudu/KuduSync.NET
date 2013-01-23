@@ -1,6 +1,7 @@
 ﻿using CommandLine;
 using System;
 using System.Diagnostics;
+using System.IO;
 
 namespace KuduSync.NET
 {
@@ -16,8 +17,10 @@ namespace KuduSync.NET
                 ICommandLineParser parser = new CommandLineParser();
                 if (parser.ParseArguments(args, kuduSyncOptions))
                 {
-                    SetLogger(kuduSyncOptions);
-                    new KuduSync(kuduSyncOptions).Run();
+                    using (var logger = GetLogger(kuduSyncOptions))
+                    {
+                        new KuduSync(kuduSyncOptions, logger).Run();
+                    }
                 }
                 else
                 {
@@ -37,20 +40,24 @@ namespace KuduSync.NET
             }
         }
 
-        private static void SetLogger(KuduSyncOptions kuduSyncOptions)
+        private static Logger GetLogger(KuduSyncOptions kuduSyncOptions)
         {
+            int maxLogLines;
+
             if (kuduSyncOptions.Quiet)
             {
-                Logger.MaxLogLines = -1;
+                maxLogLines = -1;
             }
             else if (kuduSyncOptions.Verbose != null)
             {
-                Logger.MaxLogLines = kuduSyncOptions.Verbose.Value;
+                maxLogLines = kuduSyncOptions.Verbose.Value;
             }
             else
             {
-                Logger.MaxLogLines = 0;
+                maxLogLines = 0;
             }
+
+            return new Logger(maxLogLines);
         }
     }
 }

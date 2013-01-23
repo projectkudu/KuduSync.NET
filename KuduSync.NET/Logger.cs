@@ -1,29 +1,47 @@
 ﻿using System;
+using System.IO;
 using System.Text;
 
 namespace KuduSync.NET
 {
-    public static class Logger
+    public class Logger : IDisposable
     {
-        private static int logCounter = 0;
+        private int _logCounter = 0;
+        private StreamWriter _writer;
+        private int _maxLogLines;
+
+        public Logger(int maxLogLines)
+        {
+            var stream = Console.OpenStandardOutput();
+            _writer = new StreamWriter(stream);
+            _maxLogLines = maxLogLines;
+        }
 
         /// <summary>
         /// MaxLogLines sets the verbosity, 0 is verbose, less is quiet, more is the number of maximum log lines to write.
         /// </summary>
-        public static int MaxLogLines { get; set; }
 
-        public static void Log(string format, params object[] args)
+        public void Log(string format, params object[] args)
         {
-            if (MaxLogLines == 0 || logCounter < MaxLogLines)
+            if (_maxLogLines == 0 || _logCounter < _maxLogLines)
             {
-                Console.WriteLine(format, args);
+                _writer.WriteLine(format, args);
             }
-            else if (logCounter == MaxLogLines)
+            else if (_logCounter == _maxLogLines)
             {
-                Console.WriteLine("Omitting next output lines...");
+                _writer.WriteLine("Omitting next output lines...");
             }
 
-            logCounter++;
+            _logCounter++;
+        }
+
+        public void Dispose()
+        {
+            if (_writer != null)
+            {
+                _writer.Dispose();
+                _writer = null;
+            }
         }
     }
 }
