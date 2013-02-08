@@ -41,7 +41,7 @@ namespace KuduSync.NET
 
         public void AddPath(string rootPath, string path)
         {
-            string relativePath = path.Substring(rootPath.Length).TrimStart('\\');
+            string relativePath = FileSystemHelpers.GetRelativePath(rootPath, path);
             _paths.Add(relativePath);
         }
 

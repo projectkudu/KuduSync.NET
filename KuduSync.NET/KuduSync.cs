@@ -56,7 +56,7 @@ namespace KuduSync.NET
 
         public void Run()
         {
-            _logger.Log("KuduSync.NET from: {0} to: {1}", _from, _to);
+            _logger.Log("KuduSync.NET from: '{0}' to: '{1}'", _from, _to);
 
             SmartCopy(_from, _to, new DirectoryInfoWrapper(new DirectoryInfo(_from)), new DirectoryInfoWrapper(new DirectoryInfo(_to)));
 
@@ -68,7 +68,6 @@ namespace KuduSync.NET
                                DirectoryInfoBase sourceDirectory,
                                DirectoryInfoBase destinationDirectory)
         {
-            // Skip source control folder
             if (IgnorePath(sourceDirectory))
             {
                 return;
@@ -94,10 +93,10 @@ namespace KuduSync.NET
                 // 2. We have a previous directory and the file exists there
 
                 // Trim the start path
-                string previousPath = destFile.FullName.Substring(destinationPath.Length).TrimStart('\\');
+                string previousPath = FileSystemHelpers.GetRelativePath(destinationPath, destFile.FullName);
                 if (!sourceFilesLookup.ContainsKey(destFile.Name) && DoesPathExistsInManifest(previousPath))
                 {
-                    _logger.Log("Deleting file: {0}", destFile.FullName);
+                    _logger.Log("Deleting file: '{0}'", previousPath);
                     destFile.Delete();
                 }
             }
@@ -123,7 +122,7 @@ namespace KuduSync.NET
                 // Otherwise, copy the file
                 string path = FileSystemHelpers.GetDestinationPath(sourcePath, destinationPath, sourceFile);
 
-                _logger.Log("Copying file from: {0} to: {1}", sourceFile.FullName, path);
+                _logger.Log("Copying file: '{0}'", FileSystemHelpers.GetRelativePath(sourcePath, sourceFile.FullName));
                 OperationManager.Attempt(() => sourceFile.CopyTo(path, overwrite: true));
             }
 
@@ -136,10 +135,10 @@ namespace KuduSync.NET
                 // 1. We have no previous directory
                 // 2. We have a previous directory and the file exists there
 
-                string previousPath = destSubDirectory.FullName.Substring(destinationPath.Length).TrimStart('\\');
+                string previousPath = FileSystemHelpers.GetRelativePath(destinationPath, destSubDirectory.FullName);
                 if (!sourceDirectoryLookup.ContainsKey(destSubDirectory.Name) && DoesPathExistsInManifest(previousPath))
                 {
-                    _logger.Log("Deleting directory: {0}", destSubDirectory.FullName);
+                    _logger.Log("Deleting directory: '{0}'", previousPath);
                     destSubDirectory.Delete(recursive: true);
                 }
             }

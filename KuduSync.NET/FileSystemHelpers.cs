@@ -8,7 +8,7 @@ namespace KuduSync.NET
 {
     internal static class FileSystemHelpers
     {
-        internal static string GetDestinationPath(string sourceRootPath, string destinationRootPath, FileSystemInfoBase info)
+        public static string GetDestinationPath(string sourceRootPath, string destinationRootPath, FileSystemInfoBase info)
         {
             string sourcePath = info.FullName;
             sourcePath = sourcePath.Substring(sourceRootPath.Length)
@@ -17,7 +17,7 @@ namespace KuduSync.NET
             return Path.Combine(destinationRootPath, sourcePath);
         }
 
-        internal static IDictionary<string, FileInfoBase> GetFiles(DirectoryInfoBase info)
+        public static IDictionary<string, FileInfoBase> GetFiles(DirectoryInfoBase info)
         {
             if (info == null)
             {
@@ -26,7 +26,7 @@ namespace KuduSync.NET
             return info.GetFilesWithRetry().ToDictionary(f => f.Name, StringComparer.OrdinalIgnoreCase);
         }
 
-        internal static IDictionary<string, DirectoryInfoBase> GetDirectories(DirectoryInfoBase info)
+        public static IDictionary<string, DirectoryInfoBase> GetDirectories(DirectoryInfoBase info)
         {
             if (info == null)
             {
@@ -37,12 +37,27 @@ namespace KuduSync.NET
 
         // Call DirectoryInfoBase.GetFiles under a retry loop to make the system
         // more resilient when some files are temporarily in use
-        internal static FileInfoBase[] GetFilesWithRetry(this DirectoryInfoBase info)
+        public static FileInfoBase[] GetFilesWithRetry(this DirectoryInfoBase info)
         {
             return OperationManager.Attempt(() =>
             {
                 return info.GetFiles();
             });
+        }
+
+        public static string GetRelativePath(string rootPath, string path)
+        {
+            if (String.IsNullOrEmpty(rootPath))
+            {
+                throw new ArgumentNullException("rootPath");
+            }
+
+            if (String.IsNullOrEmpty(path))
+            {
+                throw new ArgumentNullException("path");
+            }
+
+            return path.Substring(rootPath.Length).TrimStart('\\');
         }
     }
 }
