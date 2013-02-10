@@ -7,10 +7,11 @@ namespace KuduSync.NET
 {
     class Program
     {
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
             var stopwatch = Stopwatch.StartNew();
             var kuduSyncOptions = new KuduSyncOptions();
+            int exitCode = 0;
 
             try
             {
@@ -30,6 +31,7 @@ namespace KuduSync.NET
             catch (Exception ex)
             {
                 Console.Error.WriteLine("Error: " + ex.Message);
+                exitCode = 1;
             }
 
             stopwatch.Stop();
@@ -38,6 +40,8 @@ namespace KuduSync.NET
             {
                 Console.WriteLine("Time " + stopwatch.ElapsedMilliseconds);
             }
+
+            return exitCode;
         }
 
         private static Logger GetLogger(KuduSyncOptions kuduSyncOptions)

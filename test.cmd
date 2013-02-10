@@ -8,14 +8,17 @@ echo Run tests
 
 pushd test
 
-cal npm install
-if %errorlevel%==1 goto error
+call npm install
+if %errorlevel%==1 goto error_p
 
 call npm test
-if %errorlevel%==1 goto error
+if %errorlevel%==1 goto error_p
 popd
 
 goto end
+
+:error_p
+popd
 
 :error
 echo ============
