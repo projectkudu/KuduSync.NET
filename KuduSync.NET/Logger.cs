@@ -6,9 +6,12 @@ namespace KuduSync.NET
 {
     public class Logger : IDisposable
     {
+        private const int KeepAliveLogTimeInSeconds = 20;
+
         private int _logCounter = 0;
         private StreamWriter _writer;
         private int _maxLogLines;
+        private DateTime _nextLogTime;
 
         /// <summary>
         /// Logger class
@@ -30,6 +33,15 @@ namespace KuduSync.NET
             else if (_logCounter == _maxLogLines)
             {
                 _writer.WriteLine("Omitting next output lines...");
+            }
+            else
+            {
+                // Make sure some output is still logged every 20 seconds
+                if (DateTime.Now >= _nextLogTime)
+                {
+                    _writer.WriteLine("Working...");
+                    _nextLogTime = DateTime.Now.Add(TimeSpan.FromSeconds(KeepAliveLogTimeInSeconds));
+                }
             }
 
             _logCounter++;
