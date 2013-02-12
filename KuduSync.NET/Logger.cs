@@ -26,6 +26,8 @@ namespace KuduSync.NET
 
         public void Log(string format, params object[] args)
         {
+            bool logged = false;
+
             if (_maxLogLines == 0 || _logCounter < _maxLogLines)
             {
                 _writer.WriteLine(format, args);
@@ -33,15 +35,22 @@ namespace KuduSync.NET
             else if (_logCounter == _maxLogLines)
             {
                 _writer.WriteLine("Omitting next output lines...");
+                logged = true;
             }
             else
             {
                 // Make sure some output is still logged every 20 seconds
                 if (DateTime.Now >= _nextLogTime)
                 {
-                    _writer.WriteLine("Working...");
-                    _nextLogTime = DateTime.Now.Add(TimeSpan.FromSeconds(KeepAliveLogTimeInSeconds));
+                    _writer.WriteLine("Processed {0} files...", _logCounter - 1);
+                    logged = true;
                 }
+            }
+
+            if (logged)
+            {
+                _writer.Flush();
+                _nextLogTime = DateTime.Now.Add(TimeSpan.FromSeconds(KeepAliveLogTimeInSeconds));
             }
 
             _logCounter++;
