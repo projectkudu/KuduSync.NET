@@ -97,7 +97,7 @@ namespace KuduSync.NET
                 if (!sourceFilesLookup.ContainsKey(destFile.Name) && DoesPathExistsInManifest(previousPath))
                 {
                     _logger.Log("Deleting file: '{0}'", previousPath);
-                    destFile.Delete();
+                    OperationManager.Attempt(() => destFile.Delete());
                 }
             }
 
@@ -135,11 +135,9 @@ namespace KuduSync.NET
                 // 1. We have no previous directory
                 // 2. We have a previous directory and the file exists there
 
-                string previousPath = FileSystemHelpers.GetRelativePath(destinationPath, destSubDirectory.FullName);
-                if (!sourceDirectoryLookup.ContainsKey(destSubDirectory.Name) && DoesPathExistsInManifest(previousPath))
+                if (!sourceDirectoryLookup.ContainsKey(destSubDirectory.Name))
                 {
-                    _logger.Log("Deleting directory: '{0}'", previousPath);
-                    destSubDirectory.Delete(recursive: true);
+                    SmartDirectoryDelete(destSubDirectory, destinationPath);
                 }
             }
 
@@ -156,6 +154,39 @@ namespace KuduSync.NET
 
                 // Sync all sub directories
                 SmartCopy(sourcePath, destinationPath, sourceSubDirectory, targetSubDirectory);
+            }
+        }
+
+        private void SmartDirectoryDelete(DirectoryInfoBase directory, string rootPath)
+        {
+            string previousDirectoryPath = FileSystemHelpers.GetRelativePath(rootPath, directory.FullName);
+            if (!DoesPathExistsInManifest(previousDirectoryPath))
+            {
+                return;
+            }
+
+            var files = FileSystemHelpers.GetFiles(directory);
+            var subDirectories = FileSystemHelpers.GetDirectories(directory);
+
+            foreach (var file in files.Values)
+            {
+                string previousFilePath = FileSystemHelpers.GetRelativePath(rootPath, file.FullName);
+                if (DoesPathExistsInManifest(previousFilePath))
+                {
+                    _logger.Log("Deleting file: '{0}'", previousFilePath);
+                    OperationManager.Attempt(() => file.Delete());
+                }
+            }
+
+            foreach (var subDirectory in subDirectories.Values)
+            {
+                SmartDirectoryDelete(subDirectory, rootPath);
+            }
+
+            if (directory.IsEmpty())
+            {
+                _logger.Log("Deleting directory: '{0}'", previousDirectoryPath);
+                OperationManager.Attempt(() => directory.Delete());
             }
         }
 

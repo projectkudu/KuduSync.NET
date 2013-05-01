@@ -26,6 +26,17 @@ namespace KuduSync.NET
             return info.GetFilesWithRetry().ToDictionary(f => f.Name, StringComparer.OrdinalIgnoreCase);
         }
 
+        public static bool IsEmpty(this DirectoryInfoBase info)
+        {
+            if (info == null)
+            {
+                return true;
+            }
+
+            FileSystemInfoBase[] fileSystemInfos = OperationManager.Attempt(() => info.GetFileSystemInfos());
+            return !fileSystemInfos.Any();
+        }
+
         public static IDictionary<string, DirectoryInfoBase> GetDirectories(DirectoryInfoBase info)
         {
             if (info == null)
