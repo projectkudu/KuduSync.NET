@@ -34,7 +34,7 @@ namespace KuduSync.NET
             }
 
             FileSystemInfoBase[] fileSystemInfos = OperationManager.Attempt(() => info.GetFileSystemInfos());
-            return !fileSystemInfos.Any();
+            return fileSystemInfos.Length == 0;
         }
 
         public static IDictionary<string, DirectoryInfoBase> GetDirectories(DirectoryInfoBase info)
