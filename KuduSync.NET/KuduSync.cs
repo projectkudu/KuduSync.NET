@@ -73,6 +73,12 @@ namespace KuduSync.NET
                 return;
             }
 
+            // No need to copy a directory to itself
+            if (destinationPath == sourceDirectory.FullName)
+            {
+                return;
+            }
+
             if (!destinationDirectory.Exists)
             {
                 destinationDirectory.Create();
