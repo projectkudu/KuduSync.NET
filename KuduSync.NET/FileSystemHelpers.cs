@@ -70,5 +70,17 @@ namespace KuduSync.NET
 
             return path.Substring(rootPath.Length).TrimStart('\\');
         }
+
+        public static bool IsSubDirectory(string path1, string path2)
+        {
+            if (path1 != null && path2 != null)
+            {
+                path1 = Path.GetFullPath(path1);
+                path2 = Path.GetFullPath(path2);
+                return path2.StartsWith(path1, StringComparison.OrdinalIgnoreCase);
+            }
+
+            return false;
+        }
     }
 }

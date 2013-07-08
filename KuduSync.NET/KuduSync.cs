@@ -35,6 +35,11 @@ namespace KuduSync.NET
             {
                 throw new NotSupportedException("WhatIf flag is currently not supported");
             }
+
+            if (FileSystemHelpers.IsSubDirectory(_from, _to) || FileSystemHelpers.IsSubDirectory(_to, _from))
+            {
+                throw new InvalidOperationException("Source and destination directories cannot be sub-directories of each other");
+            }
         }
 
         private HashSet<string> BuildIgnoreList(string ignore)
