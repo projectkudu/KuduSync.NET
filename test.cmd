@@ -1,5 +1,7 @@
 @echo off
 
+msbuild /p:Configuration=Release
+
 echo Get functional tests file.
 call cscript getFile.vbs
 if %errorlevel%==1 goto error
