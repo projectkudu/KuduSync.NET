@@ -13,8 +13,7 @@ namespace KuduSync.NET
             var kuduSyncOptions = new KuduSyncOptions();
             int exitCode = 0;
 
-            try
-            {
+            
                 ICommandLineParser parser = new CommandLineParser();
                 if (parser.ParseArguments(args, kuduSyncOptions))
                 {
@@ -25,14 +24,10 @@ namespace KuduSync.NET
                 }
                 else
                 {
-                    throw new InvalidOperationException("Failed to parse arguments");
+                    Console.Error.WriteLine(kuduSyncOptions.GetUsage());
+                    return 1;
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine("Error: " + ex.Message);
-                exitCode = 1;
-            }
+            
 
             stopwatch.Stop();
 
