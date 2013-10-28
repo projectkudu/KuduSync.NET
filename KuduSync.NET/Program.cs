@@ -25,7 +25,8 @@ namespace KuduSync.NET
                 }
                 else
                 {
-                    throw new InvalidOperationException("Failed to parse arguments");
+                    Console.Error.WriteLine(kuduSyncOptions.GetUsage());
+                    return 1;
                 }
             }
             catch (Exception ex)
