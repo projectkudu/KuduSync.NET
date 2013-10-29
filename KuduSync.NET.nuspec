@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>KuduSync.NET</id>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <authors>amitap</authors>
     <owners>amitap</owners>
     <licenseUrl>https://github.com/projectkudu/KuduSync.NET/blob/master/LICENSE.txt</licenseUrl>
