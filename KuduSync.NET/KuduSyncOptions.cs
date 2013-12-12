@@ -24,6 +24,9 @@ namespace KuduSync.NET
         [Option("p", "previousManifest", Required = false, HelpText = "Previous manifest file path")]
         public string PreviousManifestFilePath { get; set; }
 
+        [Option("x", "ignoremanifest", Required = false, HelpText = "Ignores the previous manifest file during deletion")]
+        public bool IgnoreManifestFile { get; set; }
+
         [Option("i", "ignore", Required = false, HelpText = "List of files/directories to ignore and not sync, delimited by ;")]
         public string Ignore { get; set; }
 

@@ -19,10 +19,12 @@ namespace KuduSync.NET
         private HashSet<string> _previousManifest;
         private HashSet<string> _ignoreList;
         private bool _whatIf;
+        private KuduSyncOptions _options;
 
         public KuduSync(KuduSyncOptions options, Logger logger)
         {
             _logger = logger;
+            _options = options;
 
             _from = Path.GetFullPath(options.From);
             _to = Path.GetFullPath(options.To);
@@ -105,7 +107,7 @@ namespace KuduSync.NET
 
                 // Trim the start path
                 string previousPath = FileSystemHelpers.GetRelativePath(destinationPath, destFile.FullName);
-                if (!sourceFilesLookup.ContainsKey(destFile.Name) && DoesPathExistsInManifest(previousPath))
+                if (!sourceFilesLookup.ContainsKey(destFile.Name) && (_options.IgnoreManifestFile || DoesPathExistsInManifest(previousPath)))
                 {
                     _logger.Log("Deleting file: '{0}'", previousPath);
                     OperationManager.Attempt(() => destFile.Delete());
@@ -171,7 +173,7 @@ namespace KuduSync.NET
         private void SmartDirectoryDelete(DirectoryInfoBase directory, string rootPath)
         {
             string previousDirectoryPath = FileSystemHelpers.GetRelativePath(rootPath, directory.FullName);
-            if (!DoesPathExistsInManifest(previousDirectoryPath))
+            if (!_options.IgnoreManifestFile && !DoesPathExistsInManifest(previousDirectoryPath))
             {
                 return;
             }
