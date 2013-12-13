@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <StartArguments>-f "src" -t "dest" -n manifest.txt -i "domains.config%3bweb.config%3bsitefs%3b_legacy%3b.syncarchive%3bobj%3bxC.Web.csproj%3bxC.Web.csproj.user" -x</StartArguments>
+    <StartArguments>-f "src" -t "dest" -n manifest.txt -i "ignore%3b.git%3bdomains.config%3bweb.config%3bsitefs%3b.syncarchive%3b.SyncIgnore%3bobj%3bxC.Web.csproj%3bxC.Web.csproj.user" -x -m</StartArguments>
     <StartWorkingDirectory>Z:\git\sites\kudutest</StartWorkingDirectory>
   </PropertyGroup>
 </Project>
