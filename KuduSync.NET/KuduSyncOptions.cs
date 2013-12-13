@@ -18,14 +18,17 @@ namespace KuduSync.NET
         [Option("t", "to", Required = true, HelpText = "Destination directory to sync")]
         public string To { get; set; }
 
-        [Option("n", "nextManifest", Required = true, HelpText = "Next manifest file path")]
+        [Option("n", "nextManifest", Required = false, HelpText = "Next manifest file path")]
         public string NextManifestFilePath { get; set; }
 
         [Option("p", "previousManifest", Required = false, HelpText = "Previous manifest file path")]
         public string PreviousManifestFilePath { get; set; }
 
-        [Option("x", "ignoremanifest", Required = false, HelpText = "Ignores the previous manifest file during deletion")]
+        [Option("x", "ignoremanifest", Required = false, HelpText = "Disables the processing and generation of the manifest files.")]
         public bool IgnoreManifestFile { get; set; }
+
+        [Option("m", "copymetadata", Required = false, HelpText = "Additionally copies 'last write/create/access times' for files and the 'filesystem attributes' for directories")]
+        public bool CopyMetaData { get; set; }
 
         [Option("i", "ignore", Required = false, HelpText = "List of files/directories to ignore and not sync, delimited by ;")]
         public string Ignore { get; set; }
