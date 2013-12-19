@@ -182,7 +182,9 @@ namespace KuduSync.NET
         private void SmartDirectoryDelete(DirectoryInfoBase directory, string rootPath)
         {
             if (IgnorePath(directory))
+            {
                 return;
+            }
 
             string previousDirectoryPath = FileSystemHelpers.GetRelativePath(rootPath, directory.FullName);
             if (!_options.IgnoreManifestFile && !DoesPathExistsInManifest(previousDirectoryPath))
