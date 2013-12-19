@@ -29,10 +29,15 @@ namespace KuduSync.NET
 
             _from = Path.GetFullPath(options.From);
             _to = Path.GetFullPath(options.To);
-            _nextManifest = options.IgnoreManifestFile ? null : new DeploymentManifest(options.NextManifestFilePath);
-            _previousManifest = options.IgnoreManifestFile ? null : new HashSet<string>(DeploymentManifest.LoadManifestFile(options.PreviousManifestFilePath).Paths, StringComparer.OrdinalIgnoreCase);
+            _nextManifest = new DeploymentManifest(options.NextManifestFilePath);
+            _previousManifest = new HashSet<string>(DeploymentManifest.LoadManifestFile(options.PreviousManifestFilePath).Paths, StringComparer.OrdinalIgnoreCase);
             _ignoreList = BuildIgnoreList(options.Ignore);
             _whatIf = options.WhatIf;
+
+            if (!options.IgnoreManifestFile && string.IsNullOrWhiteSpace(options.NextManifestFilePath))
+            {
+                throw new InvalidOperationException("The 'nextManifest' option must be specified unless the 'ignoremanifest' option is set.");
+            }
 
             if (_whatIf)
             {
@@ -68,8 +73,7 @@ namespace KuduSync.NET
 
             SmartCopy(_from, _to, new DirectoryInfoWrapper(new DirectoryInfo(_from)), new DirectoryInfoWrapper(new DirectoryInfo(_to)));
 
-            if (!_options.IgnoreManifestFile)
-                _nextManifest.SaveManifestFile();
+            _nextManifest.SaveManifestFile();
         }
 
         private void SmartCopy(string sourcePath,
@@ -125,8 +129,7 @@ namespace KuduSync.NET
                     continue;
                 }
 
-                if (!_options.IgnoreManifestFile)
-                    _nextManifest.AddPath(sourcePath, sourceFile.FullName);
+                _nextManifest.AddPath(sourcePath, sourceFile.FullName);
         
                 // if the file exists in the destination then only copy it again if it's
                 // last write time is different than the same file in the source (only if it changed)
@@ -169,8 +172,7 @@ namespace KuduSync.NET
                     targetSubDirectory = CreateDirectoryInfo(path);
                 }
 
-                if (!_options.IgnoreManifestFile)
-                    _nextManifest.AddPath(sourcePath, sourceSubDirectory.FullName);
+                _nextManifest.AddPath(sourcePath, sourceSubDirectory.FullName);
 
                 // Sync all sub directories
                 SmartCopy(sourcePath, destinationPath, sourceSubDirectory, targetSubDirectory);
@@ -197,7 +199,8 @@ namespace KuduSync.NET
                 if (_options.IgnoreManifestFile || DoesPathExistsInManifest(previousFilePath))
                 {
                     _logger.Log("Deleting file: '{0}'", previousFilePath);
-                    OperationManager.Attempt(() => file.Delete());
+                    var inclosuresafe = file;
+                    OperationManager.Attempt(() => inclosuresafe.Delete());
                 }
             }
 
@@ -218,7 +221,9 @@ namespace KuduSync.NET
             var destFile = sourceFile.CopyTo(path, overwrite: true);
 
             if (!_options.CopyMetaData)
+            {
                 return;
+            }
 
             //we remove the existing attributes, as 'read-only' will cause an exception when writing 'creationtime' an others.
 
@@ -255,7 +260,9 @@ namespace KuduSync.NET
                 sb.Append("E");
 
             if (sb.Length == 1)
+            {
                 return "";
+            }
 
             sb.Append("]");
             return sb.ToString();
