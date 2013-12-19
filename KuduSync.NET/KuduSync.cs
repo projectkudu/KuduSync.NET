@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Abstractions;
 using System.Linq;
+using System.Text;
 
 namespace KuduSync.NET
 {
@@ -19,10 +20,12 @@ namespace KuduSync.NET
         private HashSet<string> _previousManifest;
         private HashSet<string> _ignoreList;
         private bool _whatIf;
+        private KuduSyncOptions _options;
 
         public KuduSync(KuduSyncOptions options, Logger logger)
         {
             _logger = logger;
+            _options = options;
 
             _from = Path.GetFullPath(options.From);
             _to = Path.GetFullPath(options.To);
@@ -30,6 +33,11 @@ namespace KuduSync.NET
             _previousManifest = new HashSet<string>(DeploymentManifest.LoadManifestFile(options.PreviousManifestFilePath).Paths, StringComparer.OrdinalIgnoreCase);
             _ignoreList = BuildIgnoreList(options.Ignore);
             _whatIf = options.WhatIf;
+
+            if (!options.IgnoreManifestFile && string.IsNullOrWhiteSpace(options.NextManifestFilePath))
+            {
+                throw new InvalidOperationException("The 'nextManifest' option must be specified unless the 'ignoremanifest' option is set.");
+            }
 
             if (_whatIf)
             {
@@ -87,6 +95,8 @@ namespace KuduSync.NET
             if (!destinationDirectory.Exists)
             {
                 destinationDirectory.Create();
+                if (_options.CopyMetaData)
+                    destinationDirectory.Attributes = sourceDirectory.Attributes;
             }
 
             var destFilesLookup = FileSystemHelpers.GetFiles(destinationDirectory);
@@ -105,7 +115,7 @@ namespace KuduSync.NET
 
                 // Trim the start path
                 string previousPath = FileSystemHelpers.GetRelativePath(destinationPath, destFile.FullName);
-                if (!sourceFilesLookup.ContainsKey(destFile.Name) && DoesPathExistsInManifest(previousPath))
+                if (!sourceFilesLookup.ContainsKey(destFile.Name) && (_options.IgnoreManifestFile || DoesPathExistsInManifest(previousPath)))
                 {
                     _logger.Log("Deleting file: '{0}'", previousPath);
                     OperationManager.Attempt(() => destFile.Delete());
@@ -120,7 +130,7 @@ namespace KuduSync.NET
                 }
 
                 _nextManifest.AddPath(sourcePath, sourceFile.FullName);
-
+        
                 // if the file exists in the destination then only copy it again if it's
                 // last write time is different than the same file in the source (only if it changed)
                 FileInfoBase targetFile;
@@ -133,8 +143,9 @@ namespace KuduSync.NET
                 // Otherwise, copy the file
                 string path = FileSystemHelpers.GetDestinationPath(sourcePath, destinationPath, sourceFile);
 
-                _logger.Log("Copying file: '{0}'", FileSystemHelpers.GetRelativePath(sourcePath, sourceFile.FullName));
-                OperationManager.Attempt(() => sourceFile.CopyTo(path, overwrite: true));
+                var details = FileSystemHelpers.GetRelativePath(sourcePath, sourceFile.FullName) + (_options.CopyMetaData ? " " + ShorthandAttributes(sourceFile) : "");
+                _logger.Log("Copying file: '{0}'", details);
+                OperationManager.Attempt(() => SmartCopyFile(sourceFile, path));
             }
 
             var sourceDirectoryLookup = FileSystemHelpers.GetDirectories(sourceDirectory);
@@ -170,8 +181,13 @@ namespace KuduSync.NET
 
         private void SmartDirectoryDelete(DirectoryInfoBase directory, string rootPath)
         {
+            if (IgnorePath(directory))
+            {
+                return;
+            }
+
             string previousDirectoryPath = FileSystemHelpers.GetRelativePath(rootPath, directory.FullName);
-            if (!DoesPathExistsInManifest(previousDirectoryPath))
+            if (!_options.IgnoreManifestFile && !DoesPathExistsInManifest(previousDirectoryPath))
             {
                 return;
             }
@@ -182,10 +198,11 @@ namespace KuduSync.NET
             foreach (var file in files.Values)
             {
                 string previousFilePath = FileSystemHelpers.GetRelativePath(rootPath, file.FullName);
-                if (DoesPathExistsInManifest(previousFilePath))
+                if (_options.IgnoreManifestFile || DoesPathExistsInManifest(previousFilePath))
                 {
                     _logger.Log("Deleting file: '{0}'", previousFilePath);
-                    OperationManager.Attempt(() => file.Delete());
+                    var inclosuresafe = file;
+                    OperationManager.Attempt(() => inclosuresafe.Delete());
                 }
             }
 
@@ -201,14 +218,66 @@ namespace KuduSync.NET
             }
         }
 
+        private void SmartCopyFile(FileInfoBase sourceFile, string path)
+        {
+            var destFile = sourceFile.CopyTo(path, overwrite: true);
+
+            if (!_options.CopyMetaData)
+            {
+                return;
+            }
+
+            //we remove the existing attributes, as 'read-only' will cause an exception when writing 'creationtime' an others.
+
+            var removeattr = sourceFile.Attributes;
+            destFile.Attributes = 0;
+            
+            destFile.CreationTimeUtc = sourceFile.CreationTimeUtc;
+            destFile.LastWriteTimeUtc = sourceFile.LastWriteTimeUtc;
+            destFile.LastAccessTimeUtc = sourceFile.LastAccessTimeUtc;
+            destFile.Attributes = removeattr;
+        }
+
+        private string ShorthandAttributes(FileSystemInfoBase sourceFile)
+        {
+            var sb = new StringBuilder("[");
+            var sfa = sourceFile.Attributes;
+
+            if ((sfa & FileAttributes.Hidden) == FileAttributes.Hidden)
+                sb.Append("A");
+
+            if ((sfa & FileAttributes.Hidden) == FileAttributes.Hidden)
+                sb.Append("H");
+
+            if ((sfa & FileAttributes.System) == FileAttributes.System)
+                sb.Append("S");
+
+            if ((sfa & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
+                sb.Append("R");
+
+            if ((sfa & FileAttributes.Compressed) == FileAttributes.Compressed)
+                sb.Append("C");
+
+            if ((sfa & FileAttributes.Encrypted) == FileAttributes.Encrypted)
+                sb.Append("E");
+
+            if (sb.Length == 1)
+            {
+                return "";
+            }
+
+            sb.Append("]");
+            return sb.ToString();
+        }
+
         private DirectoryInfoBase CreateDirectoryInfo(string path)
         {
             return new DirectoryInfoWrapper(new DirectoryInfo(path));
         }
 
-        private bool IgnorePath(FileSystemInfoBase fileName)
+        private bool IgnorePath(FileSystemInfoBase fileSystemInfoBase)
         {
-            return _ignoreList.Contains(fileName.Name);
+            return _ignoreList.Contains(fileSystemInfoBase.Name);
         }
 
         private bool DoesPathExistsInManifest(string path)

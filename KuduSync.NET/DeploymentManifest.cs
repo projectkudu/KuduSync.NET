@@ -31,7 +31,10 @@ namespace KuduSync.NET
 
         public void SaveManifestFile()
         {
-            File.WriteAllLines(_manifestFilePath, _paths);
+            if (!string.IsNullOrWhiteSpace(_manifestFilePath))
+            {
+                File.WriteAllLines(_manifestFilePath, _paths);
+            }
         }
 
         public string ManifestFilePath
