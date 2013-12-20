@@ -96,7 +96,9 @@ namespace KuduSync.NET
             {
                 destinationDirectory.Create();
                 if (_options.CopyMetaData)
+                {
                     destinationDirectory.Attributes = sourceDirectory.Attributes;
+                }
             }
 
             var destFilesLookup = FileSystemHelpers.GetFiles(destinationDirectory);
@@ -115,7 +117,7 @@ namespace KuduSync.NET
 
                 // Trim the start path
                 string previousPath = FileSystemHelpers.GetRelativePath(destinationPath, destFile.FullName);
-                if (!sourceFilesLookup.ContainsKey(destFile.Name) && (_options.IgnoreManifestFile || DoesPathExistsInManifest(previousPath)))
+                if (!sourceFilesLookup.ContainsKey(destFile.Name) && DoesPathExistsInManifest(previousPath))
                 {
                     _logger.Log("Deleting file: '{0}'", previousPath);
                     OperationManager.Attempt(() => destFile.Delete());
@@ -130,7 +132,7 @@ namespace KuduSync.NET
                 }
 
                 _nextManifest.AddPath(sourcePath, sourceFile.FullName);
-        
+
                 // if the file exists in the destination then only copy it again if it's
                 // last write time is different than the same file in the source (only if it changed)
                 FileInfoBase targetFile;
@@ -143,7 +145,7 @@ namespace KuduSync.NET
                 // Otherwise, copy the file
                 string path = FileSystemHelpers.GetDestinationPath(sourcePath, destinationPath, sourceFile);
 
-                var details = FileSystemHelpers.GetRelativePath(sourcePath, sourceFile.FullName) + (_options.CopyMetaData ? " " + ShorthandAttributes(sourceFile) : "");
+                var details = FileSystemHelpers.GetRelativePath(sourcePath, sourceFile.FullName) + (_options.CopyMetaData ? " " + ShorthandAttributes(sourceFile) : String.Empty);
                 _logger.Log("Copying file: '{0}'", details);
                 OperationManager.Attempt(() => SmartCopyFile(sourceFile, path));
             }
@@ -187,7 +189,7 @@ namespace KuduSync.NET
             }
 
             string previousDirectoryPath = FileSystemHelpers.GetRelativePath(rootPath, directory.FullName);
-            if (!_options.IgnoreManifestFile && !DoesPathExistsInManifest(previousDirectoryPath))
+            if (!DoesPathExistsInManifest(previousDirectoryPath))
             {
                 return;
             }
@@ -198,7 +200,7 @@ namespace KuduSync.NET
             foreach (var file in files.Values)
             {
                 string previousFilePath = FileSystemHelpers.GetRelativePath(rootPath, file.FullName);
-                if (_options.IgnoreManifestFile || DoesPathExistsInManifest(previousFilePath))
+                if (DoesPathExistsInManifest(previousFilePath))
                 {
                     _logger.Log("Deleting file: '{0}'", previousFilePath);
                     var inclosuresafe = file;
@@ -227,11 +229,10 @@ namespace KuduSync.NET
                 return;
             }
 
-            //we remove the existing attributes, as 'read-only' will cause an exception when writing 'creationtime' an others.
-
+            // we remove the existing attributes, as 'read-only' will cause an exception when writing 'creationtime' an others.
             var removeattr = sourceFile.Attributes;
             destFile.Attributes = 0;
-            
+
             destFile.CreationTimeUtc = sourceFile.CreationTimeUtc;
             destFile.LastWriteTimeUtc = sourceFile.LastWriteTimeUtc;
             destFile.LastAccessTimeUtc = sourceFile.LastAccessTimeUtc;
@@ -243,27 +244,39 @@ namespace KuduSync.NET
             var sb = new StringBuilder("[");
             var sfa = sourceFile.Attributes;
 
-            if ((sfa & FileAttributes.Hidden) == FileAttributes.Hidden)
+            if ((sfa & FileAttributes.Archive) == FileAttributes.Archive)
+            {
                 sb.Append("A");
+            }
 
             if ((sfa & FileAttributes.Hidden) == FileAttributes.Hidden)
+            {
                 sb.Append("H");
+            }
 
             if ((sfa & FileAttributes.System) == FileAttributes.System)
+            {
                 sb.Append("S");
+            }
 
             if ((sfa & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
+            {
                 sb.Append("R");
+            }
 
             if ((sfa & FileAttributes.Compressed) == FileAttributes.Compressed)
+            {
                 sb.Append("C");
+            }
 
             if ((sfa & FileAttributes.Encrypted) == FileAttributes.Encrypted)
+            {
                 sb.Append("E");
+            }
 
             if (sb.Length == 1)
             {
-                return "";
+                return String.Empty;
             }
 
             sb.Append("]");
@@ -282,7 +295,7 @@ namespace KuduSync.NET
 
         private bool DoesPathExistsInManifest(string path)
         {
-            return _previousManifest.Contains(path);
+            return _options.IgnoreManifestFile || _previousManifest.Contains(path);
         }
     }
 }
