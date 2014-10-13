@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
 using System.IO.Abstractions;
 using System.Linq;
@@ -21,6 +22,7 @@ namespace KuduSync.NET
         private HashSet<string> _ignoreList;
         private bool _whatIf;
         private KuduSyncOptions _options;
+        private string _toBeDeletedDirectoryPath;
 
         public KuduSync(KuduSyncOptions options, Logger logger)
         {
@@ -33,6 +35,7 @@ namespace KuduSync.NET
             _previousManifest = new HashSet<string>(DeploymentManifest.LoadManifestFile(options.PreviousManifestFilePath).Paths, StringComparer.OrdinalIgnoreCase);
             _ignoreList = BuildIgnoreList(options.Ignore);
             _whatIf = options.WhatIf;
+            _toBeDeletedDirectoryPath = Path.Combine(Environment.ExpandEnvironmentVariables(ConfigurationManager.AppSettings["KuduSyncDataDirectory"]), "tobedeleted");
 
             if (!options.IgnoreManifestFile && string.IsNullOrWhiteSpace(options.NextManifestFilePath))
             {
@@ -48,6 +51,28 @@ namespace KuduSync.NET
             {
                 throw new InvalidOperationException("Source and destination directories cannot be sub-directories of each other");
             }
+
+            if (!TryCleanupToBeDeletedDirectory())
+            {
+                _logger.Log("Cannot removed the 'to be deleted' directory, ignoring");
+            }
+        }
+
+        private bool TryCleanupToBeDeletedDirectory()
+        {
+            if (Directory.Exists(_toBeDeletedDirectoryPath))
+            {
+                try
+                {
+                    OperationManager.Attempt(() => new DirectoryInfo(_toBeDeletedDirectoryPath).Delete(recursive: true));
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private HashSet<string> BuildIgnoreList(string ignore)
@@ -74,6 +99,8 @@ namespace KuduSync.NET
             SmartCopy(_from, _to, new DirectoryInfoWrapper(new DirectoryInfo(_from)), new DirectoryInfoWrapper(new DirectoryInfo(_to)));
 
             _nextManifest.SaveManifestFile();
+
+            TryCleanupToBeDeletedDirectory();
         }
 
         private void SmartCopy(string sourcePath,
@@ -115,12 +142,12 @@ namespace KuduSync.NET
                 // 1. We have no previous directory
                 // 2. We have a previous directory and the file exists there
 
-                // Trim the start path
+                // Trim the start destinationFilePath
                 string previousPath = FileSystemHelpers.GetRelativePath(destinationPath, destFile.FullName);
                 if (!sourceFilesLookup.ContainsKey(destFile.Name) && DoesPathExistsInManifest(previousPath))
                 {
                     _logger.Log("Deleting file: '{0}'", previousPath);
-                    OperationManager.Attempt(() => destFile.Delete());
+                    OperationManager.Attempt(() => SmartDeleteFile(destFile));
                 }
             }
 
@@ -222,7 +249,7 @@ namespace KuduSync.NET
 
         private void SmartCopyFile(FileInfoBase sourceFile, string path)
         {
-            var destFile = sourceFile.CopyTo(path, overwrite: true);
+            var destFile = CopyFileAndMoveOnFailure(sourceFile, path);
 
             if (!_options.CopyMetaData)
             {
@@ -237,6 +264,76 @@ namespace KuduSync.NET
             destFile.LastWriteTimeUtc = sourceFile.LastWriteTimeUtc;
             destFile.LastAccessTimeUtc = sourceFile.LastAccessTimeUtc;
             destFile.Attributes = removeattr;
+        }
+
+        private FileInfoBase CopyFileAndMoveOnFailure(FileInfoBase sourceFile, string destinationFilePath)
+        {
+            return TryFileFuncAndMoveFileOnFailure(() => sourceFile.CopyTo(destinationFilePath, overwrite: true), destinationFilePath);
+        }
+
+        private void SmartDeleteFile(FileInfoBase fileToDelete)
+        {
+            TryFileFuncAndMoveFileOnFailure(() =>
+            {
+                fileToDelete.Delete();
+                return null;
+            }, fileToDelete.FullName);
+        }
+
+        private FileInfoBase TryFileFuncAndMoveFileOnFailure(Func<FileInfoBase> fileFunc, string destinationFilePath)
+        {
+            // Use KUDUSYNC_TURNOFFTRYMOVEONERROR environment setting as a kill switch for this feature
+            bool tryMoveOnError = String.IsNullOrEmpty(Environment.GetEnvironmentVariable("KUDUSYNC_TURNOFFTRYMOVEONERROR"));
+
+            try
+            {
+                return fileFunc();
+            }
+            catch (Exception ex)
+            {
+                if (tryMoveOnError)
+                {
+                    if (ex is IOException || ex is UnauthorizedAccessException)
+                    {
+                        FileInfoBase destFile = new FileInfo(destinationFilePath);
+                        if (destFile.Exists)
+                        {
+                            if (TryMoveFileToBeDeleted(destFile))
+                            {
+                                return fileFunc();
+                            }
+
+                            throw new IOException("Failed to change file that is currently being used \"" + destinationFilePath + '\"', ex);
+                        }
+                    }
+                }
+
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Move file to the tobedeleted directory
+        /// </summary>
+        /// <param name="fileToMove">The file to be moved</param>
+        /// <returns>true if action was successful otherwise false</returns>
+        private bool TryMoveFileToBeDeleted(FileInfoBase fileToMove)
+        {
+            try
+            {
+                if (!Directory.Exists(_toBeDeletedDirectoryPath))
+                {
+                    Directory.CreateDirectory(_toBeDeletedDirectoryPath);
+                }
+
+                fileToMove.MoveTo(Path.Combine(_toBeDeletedDirectoryPath, fileToMove.Name + "." + Path.GetRandomFileName()));
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private string ShorthandAttributes(FileSystemInfoBase sourceFile)
