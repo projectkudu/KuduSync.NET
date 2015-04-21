@@ -3,8 +3,7 @@
 msbuild /p:Configuration=Release
 
 echo Get functional tests file.
-call cscript getFile.vbs
-if %errorlevel%==1 goto error
+curl -k -o test/functionalTests.js https://raw.githubusercontent.com/projectkudu/KuduSync/master/test/functionalTests.js
 
 echo Run tests
 

@@ -78,7 +78,7 @@ namespace KuduSync.NET
 
         private void BuildIgnoreList(string ignore, out HashSet<string> ignoreSet, out List<string> wildcardIgnoreList)
         {
-            ignoreSet = new HashSet<string>();
+            ignoreSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             wildcardIgnoreList = new List<string>();
             if (!String.IsNullOrEmpty(ignore))
             {
