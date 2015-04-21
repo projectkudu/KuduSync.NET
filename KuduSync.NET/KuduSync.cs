@@ -20,6 +20,7 @@ namespace KuduSync.NET
         private DeploymentManifest _nextManifest;
         private HashSet<string> _previousManifest;
         private HashSet<string> _ignoreList;
+        private List<string> _wildcardIgnoreList;
         private bool _whatIf;
         private KuduSyncOptions _options;
         private string _toBeDeletedDirectoryPath;
@@ -33,7 +34,7 @@ namespace KuduSync.NET
             _to = Path.GetFullPath(options.To);
             _nextManifest = new DeploymentManifest(options.NextManifestFilePath);
             _previousManifest = new HashSet<string>(DeploymentManifest.LoadManifestFile(options.PreviousManifestFilePath).Paths, StringComparer.OrdinalIgnoreCase);
-            _ignoreList = BuildIgnoreList(options.Ignore);
+            BuildIgnoreList(options.Ignore, out _ignoreList, out _wildcardIgnoreList);
             _whatIf = options.WhatIf;
             _toBeDeletedDirectoryPath = Path.Combine(Environment.ExpandEnvironmentVariables(ConfigurationManager.AppSettings["KuduSyncDataDirectory"]), "tobedeleted");
 
@@ -75,21 +76,31 @@ namespace KuduSync.NET
             return true;
         }
 
-        private HashSet<string> BuildIgnoreList(string ignore)
+        private void BuildIgnoreList(string ignore, out HashSet<string> ignoreSet, out List<string> wildcardIgnoreList)
         {
+            ignoreSet = new HashSet<string>();
+            wildcardIgnoreList = new List<string>();
             if (!String.IsNullOrEmpty(ignore))
             {
-                var ignoreList = ignore.Split(';').Select(s => s.Trim());
-
-                if (ignoreList.Any(s => s.Contains('*') || s.Contains('/') || s.Contains('\\')))
+                string[] ingoreTokens = ignore.Split(';');
+                foreach (var token in ingoreTokens)
                 {
-                    throw new NotSupportedException("Wildcard matching (or \\) is not supported");
+                    var trimedToken = token.Trim();
+
+                    if (trimedToken.StartsWith("*"))
+                    {
+                        wildcardIgnoreList.Add(trimedToken.TrimStart('*'));
+                    }
+                    else if (trimedToken.Contains("*") || trimedToken.Contains('/') || trimedToken.Contains('\\'))
+                    {
+                        throw new NotSupportedException(@"Wildcard support limited to prefix matching, e.g '*txt'. Other wildcard matching (or \\) is not supported");
+                    }
+                    else
+                    {
+                        ignoreSet.Add(trimedToken);
+                    }
                 }
-
-                return new HashSet<string>(ignoreList, StringComparer.OrdinalIgnoreCase);
             }
-
-            return new HashSet<string>();
         }
 
         public void Run()
@@ -387,7 +398,8 @@ namespace KuduSync.NET
 
         private bool IgnorePath(FileSystemInfoBase fileSystemInfoBase)
         {
-            return _ignoreList.Contains(fileSystemInfoBase.Name);
+            return (_ignoreList.Contains(fileSystemInfoBase.Name)
+                || _wildcardIgnoreList.Any((name) => fileSystemInfoBase.Name.EndsWith(name, StringComparison.OrdinalIgnoreCase)));
         }
 
         private bool DoesPathExistsInManifest(string path)
