@@ -42,9 +42,12 @@ namespace KuduSync.NET
             get { return _manifestFilePath;  }
         }
 
-        public void AddPath(string rootPath, string path)
+        public void AddPath(string rootPath, string path, string targetSubFolder)
         {
             string relativePath = FileSystemHelpers.GetRelativePath(rootPath, path);
+            relativePath = string.IsNullOrEmpty(targetSubFolder)
+                ? relativePath
+                : Path.Combine(targetSubFolder, relativePath);
             _paths.Add(relativePath);
         }
 

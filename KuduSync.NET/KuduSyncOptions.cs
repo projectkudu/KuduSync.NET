@@ -18,6 +18,9 @@ namespace KuduSync.NET
         [Option("t", "to", Required = true, HelpText = "Destination directory to sync")]
         public string To { get; set; }
 
+        [Option("s", "targetsubfolder", Required = false, HelpText = "A relative sub folder in the destination to create and copy files to")]
+        public string TargetSubFolder { get; set; }
+
         [Option("n", "nextManifest", Required = false, HelpText = "Next manifest file path")]
         public string NextManifestFilePath { get; set; }
 

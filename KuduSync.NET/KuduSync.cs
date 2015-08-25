@@ -17,6 +17,7 @@ namespace KuduSync.NET
 
         private string _from;
         private string _to;
+        private readonly string _targetSubFolder;
         private DeploymentManifest _nextManifest;
         private HashSet<string> _previousManifest;
         private HashSet<string> _ignoreList;
@@ -32,6 +33,7 @@ namespace KuduSync.NET
 
             _from = Path.GetFullPath(options.From);
             _to = Path.GetFullPath(options.To);
+            _targetSubFolder = options.TargetSubFolder;
             _nextManifest = new DeploymentManifest(options.NextManifestFilePath);
             _previousManifest = new HashSet<string>(DeploymentManifest.LoadManifestFile(options.PreviousManifestFilePath).Paths, StringComparer.OrdinalIgnoreCase);
             BuildIgnoreList(options.Ignore, out _ignoreList, out _wildcardIgnoreList);
@@ -56,6 +58,11 @@ namespace KuduSync.NET
             if (!TryCleanupToBeDeletedDirectory())
             {
                 _logger.Log("Cannot removed the 'to be deleted' directory, ignoring");
+            }
+
+            if (!string.IsNullOrEmpty(_targetSubFolder))
+            {
+                _to = Path.Combine(_to, _targetSubFolder);
             }
         }
 
@@ -107,7 +114,7 @@ namespace KuduSync.NET
         {
             _logger.Log("KuduSync.NET from: '{0}' to: '{1}'", _from, _to);
 
-            SmartCopy(_from, _to, new DirectoryInfoWrapper(new DirectoryInfo(_from)), new DirectoryInfoWrapper(new DirectoryInfo(_to)));
+            SmartCopy(_from, _to, _targetSubFolder, new DirectoryInfoWrapper(new DirectoryInfo(_from)), new DirectoryInfoWrapper(new DirectoryInfo(_to)));
 
             _nextManifest.SaveManifestFile();
 
@@ -116,6 +123,7 @@ namespace KuduSync.NET
 
         private void SmartCopy(string sourcePath,
                                string destinationPath,
+                               string targetSubFolder,
                                DirectoryInfoBase sourceDirectory,
                                DirectoryInfoBase destinationDirectory)
         {
@@ -155,7 +163,7 @@ namespace KuduSync.NET
 
                 // Trim the start destinationFilePath
                 string previousPath = FileSystemHelpers.GetRelativePath(destinationPath, destFile.FullName);
-                if (!sourceFilesLookup.ContainsKey(destFile.Name) && DoesPathExistsInManifest(previousPath))
+                if (!sourceFilesLookup.ContainsKey(destFile.Name) && DoesPathExistsInManifest(previousPath, targetSubFolder))
                 {
                     _logger.Log("Deleting file: '{0}'", previousPath);
                     OperationManager.Attempt(() => SmartDeleteFile(destFile));
@@ -169,7 +177,7 @@ namespace KuduSync.NET
                     continue;
                 }
 
-                _nextManifest.AddPath(sourcePath, sourceFile.FullName);
+                _nextManifest.AddPath(sourcePath, sourceFile.FullName, targetSubFolder);
 
                 // if the file exists in the destination then only copy it again if it's
                 // last write time is different than the same file in the source (only if it changed)
@@ -199,7 +207,7 @@ namespace KuduSync.NET
 
                 if (!sourceDirectoryLookup.ContainsKey(destSubDirectory.Name))
                 {
-                    SmartDirectoryDelete(destSubDirectory, destinationPath);
+                    SmartDirectoryDelete(destSubDirectory, destinationPath, targetSubFolder);
                 }
             }
 
@@ -212,14 +220,14 @@ namespace KuduSync.NET
                     targetSubDirectory = CreateDirectoryInfo(path);
                 }
 
-                _nextManifest.AddPath(sourcePath, sourceSubDirectory.FullName);
+                _nextManifest.AddPath(sourcePath, sourceSubDirectory.FullName, targetSubFolder);
 
                 // Sync all sub directories
-                SmartCopy(sourcePath, destinationPath, sourceSubDirectory, targetSubDirectory);
+                SmartCopy(sourcePath, destinationPath, targetSubFolder, sourceSubDirectory, targetSubDirectory);
             }
         }
 
-        private void SmartDirectoryDelete(DirectoryInfoBase directory, string rootPath)
+        private void SmartDirectoryDelete(DirectoryInfoBase directory, string rootPath, string targetSubFolder)
         {
             if (IgnorePath(directory))
             {
@@ -227,7 +235,7 @@ namespace KuduSync.NET
             }
 
             string previousDirectoryPath = FileSystemHelpers.GetRelativePath(rootPath, directory.FullName);
-            if (!DoesPathExistsInManifest(previousDirectoryPath))
+            if (!DoesPathExistsInManifest(previousDirectoryPath, targetSubFolder))
             {
                 return;
             }
@@ -238,7 +246,7 @@ namespace KuduSync.NET
             foreach (var file in files.Values)
             {
                 string previousFilePath = FileSystemHelpers.GetRelativePath(rootPath, file.FullName);
-                if (DoesPathExistsInManifest(previousFilePath))
+                if (DoesPathExistsInManifest(previousFilePath, targetSubFolder))
                 {
                     _logger.Log("Deleting file: '{0}'", previousFilePath);
                     var inclosuresafe = file;
@@ -248,7 +256,7 @@ namespace KuduSync.NET
 
             foreach (var subDirectory in subDirectories.Values)
             {
-                SmartDirectoryDelete(subDirectory, rootPath);
+                SmartDirectoryDelete(subDirectory, rootPath, targetSubFolder);
             }
 
             if (directory.IsEmpty())
@@ -402,8 +410,12 @@ namespace KuduSync.NET
                 || _wildcardIgnoreList.Any((name) => fileSystemInfoBase.Name.EndsWith(name, StringComparison.OrdinalIgnoreCase)));
         }
 
-        private bool DoesPathExistsInManifest(string path)
+        private bool DoesPathExistsInManifest(string path, string targetSubFolder)
         {
+            if (!string.IsNullOrEmpty(targetSubFolder))
+            {
+                path = Path.Combine(targetSubFolder, path);
+            }
             return _options.IgnoreManifestFile || _previousManifest.Contains(path);
         }
     }
