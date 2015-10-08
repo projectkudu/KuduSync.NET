@@ -250,7 +250,7 @@ namespace KuduSync.NET
                 {
                     _logger.Log("Deleting file: '{0}'", previousFilePath);
                     var inclosuresafe = file;
-                    OperationManager.Attempt(() => inclosuresafe.Delete());
+                    OperationManager.Attempt(() => SmartDeleteFile(inclosuresafe));
                 }
             }
 
