@@ -51,6 +51,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FileInfoBaseExtensions.cs" />
     <Compile Include="KuduSyncOptions.cs" />
     <Compile Include="DeploymentManifest.cs" />
     <Compile Include="FileSystemHelpers.cs" />

@@ -25,6 +25,7 @@ namespace KuduSync.NET
         private bool _whatIf;
         private KuduSyncOptions _options;
         private string _toBeDeletedDirectoryPath;
+        private List<Tuple<FileInfoBase, string, string>> _filesToCopyLast = new List<Tuple<FileInfoBase, string, string>>();
 
         public KuduSync(KuduSyncOptions options, Logger logger)
         {
@@ -115,6 +116,7 @@ namespace KuduSync.NET
             _logger.Log("KuduSync.NET from: '{0}' to: '{1}'", _from, _to);
 
             SmartCopy(_from, _to, _targetSubFolder, new DirectoryInfoWrapper(new DirectoryInfo(_from)), new DirectoryInfoWrapper(new DirectoryInfo(_to)));
+            CopyFilesToCopyLast();
 
             _nextManifest.SaveManifestFile();
 
@@ -188,10 +190,24 @@ namespace KuduSync.NET
                     continue;
                 }
 
-                // Otherwise, copy the file
                 string path = FileSystemHelpers.GetDestinationPath(sourcePath, destinationPath, sourceFile);
 
                 var details = FileSystemHelpers.GetRelativePath(sourcePath, sourceFile.FullName) + (_options.CopyMetaData ? " " + ShorthandAttributes(sourceFile) : String.Empty);
+
+                if (sourceFile.IsWebConfig())
+                {
+                    // If current file is web.config check the content sha1.
+                    if (!destFilesLookup.TryGetValue(sourceFile.Name, out targetFile) ||
+                        !sourceFile.ComputeSha1().Equals(targetFile.ComputeSha1()))
+                    {
+                        // Save the file path to copy later for copying web.config forces an appDomain
+                        // restart right away without respecting waitChangeNotification
+                        _filesToCopyLast.Add(Tuple.Create(sourceFile, path, details));
+                    }
+                    continue;
+                }
+
+                // Otherwise, copy the file
                 _logger.Log("Copying file: '{0}'", details);
                 OperationManager.Attempt(() => SmartCopyFile(sourceFile, path));
             }
@@ -224,6 +240,15 @@ namespace KuduSync.NET
 
                 // Sync all sub directories
                 SmartCopy(sourcePath, destinationPath, targetSubFolder, sourceSubDirectory, targetSubDirectory);
+            }
+        }
+
+        private void CopyFilesToCopyLast()
+        {
+            foreach (var tuple in _filesToCopyLast)
+            {
+                _logger.Log("Copying file: '{0}'", tuple.Item3);
+                OperationManager.Attempt(() => SmartCopyFile(tuple.Item1, tuple.Item2));
             }
         }
 
