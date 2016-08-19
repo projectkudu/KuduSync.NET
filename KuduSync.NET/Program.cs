@@ -53,9 +53,9 @@ namespace KuduSync.NET
             {
                 maxLogLines = -1;
             }
-            else if (kuduSyncOptions.Verbose != null)
+            else if (kuduSyncOptions.Verbose)
             {
-                maxLogLines = kuduSyncOptions.Verbose.Value;
+                maxLogLines = int.MaxValue;
             }
             else
             {

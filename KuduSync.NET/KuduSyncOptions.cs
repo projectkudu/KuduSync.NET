@@ -39,14 +39,17 @@ namespace KuduSync.NET
         [Option("q", "quiet", Required = false, HelpText = "No logging")]
         public bool Quiet { get; set; }
 
-        [Option("v", "verbose", Required = false, HelpText = "Verbose logging with maximum number of output lines")]
-        public int? Verbose { get; set; }
+        [Option("v", "verbose",  DefaultValue = false, Required = false, HelpText = "Verbose logging with maximum number of output lines")]
+        public bool Verbose { get; set; }
 
         [Option("w", "whatIf", Required = false, HelpText = "Only log without actual copy/remove of files")]
         public bool WhatIf { get; set; }
 
         [Option("", "perf", Required = false, HelpText = "Print out the time it took to complete KuduSync operation")]
         public bool Perf { get; set; }
+
+        [Option("h", "hashOnly", DefaultValue = false, Required = false, HelpText = "Compare files by contents only using SHA256")]
+        public bool HashOnly { get; set; }
 
         [HelpOption]
         public string GetUsage()
