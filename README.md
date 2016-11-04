@@ -7,7 +7,10 @@ This is the .NET version of [KuduSync](https://github.com/projectkudu/KuduSync).
 
 ### Usage
 
-KuduSync.NET.exe `-f [source path] -t [destination path] -n [path to next manifest path] -p [path to current manifest path] -i <paths to ignore delimited by ;>`
+```
+KuduSync.NET.exe -f [source path] -t [destination path] -n [path to next manifest path]
+                 -p [path to current manifest path] -i <paths to ignore delimited by ;>
+```
 
 The tool will sync files from the `[source path]` path to the `[destination path]` path using the manifest file in `[path to current manifest path]` to help determine what was added/removed and will write the new manifest file at path `[path to current manifest path]`.
 Paths in `<paths to ignore>` will be ignored in the process
