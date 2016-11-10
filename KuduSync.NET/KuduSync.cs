@@ -205,7 +205,8 @@ namespace KuduSync.NET
                     case true:  //behaviour added by JWC on 8/11/2016
                         if (destFilesLookup.TryGetValue(sourceFile.Name, out targetFile) && sourceFile.ComputeSha256() == targetFile.ComputeSha256())  //if destination contins file, and the hash matched
                         {
-                            _logger.Log("Hash match on {0}, will not copy", details);
+                            if(_options.Verbose)
+                                _logger.Log("Hash match on {0}, will not copy", details);
                             //move to next iteration if file the same
                             continue;
                         }
