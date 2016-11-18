@@ -73,10 +73,14 @@ namespace KuduSync.NET
 
         public static bool IsSubDirectory(string path1, string path2)
         {
+            // Avoid false positives when comparing source and destination names.
+            // i.e. Compare 'directory\' to 'directory23\'
+            // rather than 'directory' to 'directory23'
+            char separator = Path.DirectorySeparatorChar;
             if (path1 != null && path2 != null)
             {
-                path1 = Path.GetFullPath(path1);
-                path2 = Path.GetFullPath(path2);
+                path1 = Path.GetFullPath(path1) + separator;
+                path2 = Path.GetFullPath(path2) + separator;
                 return path2.StartsWith(path1, StringComparison.OrdinalIgnoreCase);
             }
 
