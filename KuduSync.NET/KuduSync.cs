@@ -65,6 +65,17 @@ namespace KuduSync.NET
             {
                 _to = Path.Combine(_to, _targetSubFolder);
             }
+
+            if (_options.HashOnly)
+            {
+                _logger.Log("Hash only mode ON");
+            }
+
+            if (_options.Verbose)
+            {
+                _logger.Log("Verbose logging ON");
+            }
+
         }
 
         private bool TryCleanupToBeDeletedDirectory()
@@ -121,13 +132,12 @@ namespace KuduSync.NET
             _nextManifest.SaveManifestFile();
 
             TryCleanupToBeDeletedDirectory();
+
+            _logger.Log("Kudusync.NET Complete");
         }
 
-        private void SmartCopy(string sourcePath,
-                               string destinationPath,
-                               string targetSubFolder,
-                               DirectoryInfoBase sourceDirectory,
-                               DirectoryInfoBase destinationDirectory)
+        //Main method
+        private void SmartCopy(string sourcePath,string destinationPath,string targetSubFolder,DirectoryInfoBase sourceDirectory,DirectoryInfoBase destinationDirectory)
         {
             if (IgnorePath(sourceDirectory))
             {
@@ -165,6 +175,7 @@ namespace KuduSync.NET
 
                 // Trim the start destinationFilePath
                 string previousPath = FileSystemHelpers.GetRelativePath(destinationPath, destFile.FullName);
+
                 if (!sourceFilesLookup.ContainsKey(destFile.Name) && DoesPathExistsInManifest(previousPath, targetSubFolder))
                 {
                     _logger.Log("Deleting file: '{0}'", previousPath);
@@ -184,26 +195,44 @@ namespace KuduSync.NET
                 // if the file exists in the destination then only copy it again if it's
                 // last write time is different than the same file in the source (only if it changed)
                 FileInfoBase targetFile;
-                if (destFilesLookup.TryGetValue(sourceFile.Name, out targetFile) &&
-                    sourceFile.LastWriteTimeUtc == targetFile.LastWriteTimeUtc)
-                {
-                    continue;
-                }
-
-                string path = FileSystemHelpers.GetDestinationPath(sourcePath, destinationPath, sourceFile);
 
                 var details = FileSystemHelpers.GetRelativePath(sourcePath, sourceFile.FullName) + (_options.CopyMetaData ? " " + ShorthandAttributes(sourceFile) : String.Empty);
 
+                string path = FileSystemHelpers.GetDestinationPath(sourcePath, destinationPath, sourceFile);
+
+                switch (_options.HashOnly)
+                {
+                    case true:  //behaviour added by JWC on 8/11/2016
+                        if (destFilesLookup.TryGetValue(sourceFile.Name, out targetFile) && sourceFile.ComputeSha256() == targetFile.ComputeSha256())  //if destination contins file, and the hash matched
+                        {
+                            if(_options.Verbose)
+                                _logger.Log("Hash match on {0}, will not copy", details);
+                            //move to next iteration if file the same
+                            continue;
+                        }
+                        break;
+                    case false:
+                        if (destFilesLookup.TryGetValue(sourceFile.Name, out targetFile) && sourceFile.LastWriteTimeUtc == targetFile.LastWriteTimeUtc)  //if destination contains file, and the time matches
+                        {
+                            //move to next iteration if file the same
+                            continue;
+                        }
+                        break;
+                }
+
+                //if file is not the same, the code below executes
+
                 if (sourceFile.IsWebConfig())
                 {
-                    // If current file is web.config check the content sha1.
-                    if (!destFilesLookup.TryGetValue(sourceFile.Name, out targetFile) ||
-                        !sourceFile.ComputeSha1().Equals(targetFile.ComputeSha1()))
-                    {
+                    // If current file is web.config check the content sha256.
+                    
+                    //if (!destFilesLookup.TryGetValue(sourceFile.Name, out targetFile) && !sourceFile.ComputeSha256().Equals(targetFile.ComputeSha256()))  //if destination does not contain file OR the hash matches
+                    //{
                         // Save the file path to copy later for copying web.config forces an appDomain
                         // restart right away without respecting waitChangeNotification
                         _filesToCopyLast.Add(Tuple.Create(sourceFile, path, details));
-                    }
+                    //}
+
                     continue;
                 }
 

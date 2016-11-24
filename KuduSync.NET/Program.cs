@@ -18,7 +18,7 @@ namespace KuduSync.NET
                 ICommandLineParser parser = new CommandLineParser();
                 if (parser.ParseArguments(args, kuduSyncOptions))
                 {
-                    using (var logger = GetLogger(kuduSyncOptions))
+                    using (Logger logger = GetLogger(kuduSyncOptions))
                     {
                         new KuduSync(kuduSyncOptions, logger).Run();
                     }
@@ -53,13 +53,13 @@ namespace KuduSync.NET
             {
                 maxLogLines = -1;
             }
-            else if (kuduSyncOptions.Verbose != null)
+            else if (kuduSyncOptions.Verbose)
             {
-                maxLogLines = kuduSyncOptions.Verbose.Value;
+                maxLogLines = int.MaxValue;
             }
             else
             {
-                maxLogLines = 0;
+                maxLogLines = 100;
             }
 
             return new Logger(maxLogLines);

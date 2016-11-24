@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 
 namespace KuduSync.NET
@@ -19,14 +21,33 @@ namespace KuduSync.NET
         /// <param name="maxLogLines">sets the verbosity, 0 is verbose, less is quiet, more is the number of maximum log lines to write.</param>
         public Logger(int maxLogLines)
         {
-            var stream = Console.OpenStandardOutput();
-            _writer = new StreamWriter(stream);
+            Stream stream = Console.OpenStandardOutput();
+            _writer = new KuduSyncLogger(stream);
             _maxLogLines = maxLogLines;
         }
+
+
+        public class KuduSyncLogger : StreamWriter
+        {
+            public KuduSyncLogger(Stream stream): base(stream)
+            {
+                
+
+            }
+
+            public override void WriteLine(string value)
+            {
+                Debug.WriteLine(value);
+                base.WriteLine(value);
+            }
+        }
+
+
 
         public void Log(string format, params object[] args)
         {
             bool logged = false;
+
 
             if (_maxLogLines == 0 || _logCounter < _maxLogLines)
             {

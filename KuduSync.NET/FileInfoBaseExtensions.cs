@@ -19,5 +19,14 @@ namespace KuduSync.NET
                 return BitConverter.ToString(sha1.ComputeHash(fileStream));
             }
         }
+
+        public static string ComputeSha256(this FileInfoBase file)
+        {
+            using (var fileStream = file.OpenRead())
+            {
+                var sha256 = new SHA256Managed();
+                return BitConverter.ToString(sha256.ComputeHash(fileStream));
+            }
+        }
     }
 }
