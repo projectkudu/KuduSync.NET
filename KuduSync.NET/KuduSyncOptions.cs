@@ -80,6 +80,8 @@ namespace KuduSync.NET
                     .Where(fileMatch => !string.IsNullOrWhiteSpace(fileMatch))
                     //cannot contain illegal file chars apart from the wildcard chars (* or ?)
                     .Where(fileMatch => !fileMatch.Any(ch => invalid.Contains(ch)))
+                    //Ensure web.config is always in the list
+                    .Union(new [] { "web.config" })
                     .ToArray();
             }
             return _fullTextCompareFilePatterns;
