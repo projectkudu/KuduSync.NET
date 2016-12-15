@@ -48,10 +48,41 @@ namespace KuduSync.NET
         [Option("", "perf", Required = false, HelpText = "Print out the time it took to complete KuduSync operation")]
         public bool Perf { get; set; }
 
+        [Option("", "fullCompareFiles", Required = false, 
+            DefaultValue = "web.config",
+            HelpText = "A semicolon separated list of file types to perform a full text comparison on instead of just a time stamp comparison. Wildcards are also accepted, example: --fullCompareFiles foo.txt;*.config;*.bar")]
+        public string FullTextCompareFilePatterns { get; set; }
+
         [HelpOption]
         public string GetUsage()
         {
             return HelpText.AutoBuild(this, (HelpText current) => HelpText.DefaultParsingErrorsHandler(this, current));
+        }
+
+        private string[] _fullTextCompareFilePatterns;
+
+        /// <summary>
+        /// Returns the list of file filters used to enable full text comparison
+        /// </summary>
+        /// <returns></returns>
+        /// <remarks>
+        /// This ensures the values passed in are validated and formatted correctly
+        /// </remarks>
+        public IEnumerable<string> GetFullTextCompareFilePatterns()
+        {
+            if (_fullTextCompareFilePatterns == null)
+            {
+                var invalid = Path.GetInvalidFileNameChars().Except(new[] { '*', '?' }).ToArray();
+
+                _fullTextCompareFilePatterns = FullTextCompareFilePatterns
+                    .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+                    //cannot be empty/whitespace
+                    .Where(fileMatch => !string.IsNullOrWhiteSpace(fileMatch))
+                    //cannot contain illegal file chars apart from the wildcard chars (* or ?)
+                    .Where(fileMatch => !fileMatch.Any(ch => invalid.Contains(ch)))
+                    .ToArray();
+            }
+            return _fullTextCompareFilePatterns;
         }
     }
 }

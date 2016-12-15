@@ -194,9 +194,9 @@ namespace KuduSync.NET
 
                 var details = FileSystemHelpers.GetRelativePath(sourcePath, sourceFile.FullName) + (_options.CopyMetaData ? " " + ShorthandAttributes(sourceFile) : String.Empty);
 
-                if (sourceFile.IsWebConfig())
+                if (sourceFile.IsFullTextCompareFile(_options))
                 {
-                    // If current file is web.config check the content sha1.
+                    // If current file matches the passed in file match patterns check the content sha1.
                     if (!destFilesLookup.TryGetValue(sourceFile.Name, out targetFile) ||
                         !sourceFile.ComputeSha1().Equals(targetFile.ComputeSha1()))
                     {
