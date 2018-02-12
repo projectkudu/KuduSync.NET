@@ -9,3 +9,4 @@ node_modules
 functionalTests.js
 test/temp
 KuduSync.NET.csproj.user
+.vs/
