@@ -26,8 +26,9 @@ namespace KuduSync.NET
         private KuduSyncOptions _options;
         private string _toBeDeletedDirectoryPath;
         private List<Tuple<FileInfoBase, string, string>> _filesToCopyLast = new List<Tuple<FileInfoBase, string, string>>();
+        private readonly bool _saveAppOffline;
 
-        public KuduSync(KuduSyncOptions options, Logger logger)
+        public KuduSync(KuduSyncOptions options, Logger logger, bool saveAppOffline)
         {
             _logger = logger;
             _options = options;
@@ -40,6 +41,7 @@ namespace KuduSync.NET
             BuildIgnoreList(options.Ignore, out _ignoreList, out _wildcardIgnoreList);
             _whatIf = options.WhatIf;
             _toBeDeletedDirectoryPath = Path.Combine(Environment.ExpandEnvironmentVariables(ConfigurationManager.AppSettings["KuduSyncDataDirectory"]), "tobedeleted");
+            _saveAppOffline = saveAppOffline;
 
             if (!options.IgnoreManifestFile && string.IsNullOrWhiteSpace(options.NextManifestFilePath))
             {
@@ -114,7 +116,6 @@ namespace KuduSync.NET
         public void Run()
         {
             _logger.Log("KuduSync.NET from: '{0}' to: '{1}'", _from, _to);
-
             SmartCopy(_from, _to, _targetSubFolder, new DirectoryInfoWrapper(new DirectoryInfo(_from)), new DirectoryInfoWrapper(new DirectoryInfo(_to)));
             CopyFilesToCopyLast();
 
@@ -162,10 +163,13 @@ namespace KuduSync.NET
                 // If the file doesn't exist in the source, only delete if:
                 // 1. We have no previous directory
                 // 2. We have a previous directory and the file exists there
+                // 3. File is not a kudu created AppOffline.htm
 
                 // Trim the start destinationFilePath
                 string previousPath = FileSystemHelpers.GetRelativePath(destinationPath, destFile.FullName);
-                if (!sourceFilesLookup.ContainsKey(destFile.Name) && DoesPathExistsInManifest(previousPath, targetSubFolder))
+
+                bool isFileKuduAppOffline = _saveAppOffline && destFile.FullName.Equals(Path.Combine(_to, Program.AppOfflineFileName));
+                if (!sourceFilesLookup.ContainsKey(destFile.Name) && DoesPathExistsInManifest(previousPath, targetSubFolder) && !isFileKuduAppOffline)
                 {
                     _logger.Log("Deleting file: '{0}'", previousPath);
                     OperationManager.Attempt(() => SmartDeleteFile(destFile));
