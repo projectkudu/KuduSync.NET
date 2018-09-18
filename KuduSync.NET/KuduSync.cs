@@ -152,6 +152,7 @@ namespace KuduSync.NET
 
             var destFilesLookup = FileSystemHelpers.GetFiles(destinationDirectory);
             var sourceFilesLookup = FileSystemHelpers.GetFiles(sourceDirectory);
+            var appOfflinePath = Path.Combine(_to, Program.AppOfflineFileName);
 
             foreach (var destFile in destFilesLookup.Values)
             {
@@ -168,7 +169,7 @@ namespace KuduSync.NET
                 // Trim the start destinationFilePath
                 string previousPath = FileSystemHelpers.GetRelativePath(destinationPath, destFile.FullName);
 
-                bool isFileKuduAppOffline = _saveAppOffline && destFile.FullName.Equals(Path.Combine(_to, Program.AppOfflineFileName));
+                bool isFileKuduAppOffline = _saveAppOffline && destFile.FullName.Equals(appOfflinePath, StringComparison.OrdinalIgnoreCase);
                 if (!sourceFilesLookup.ContainsKey(destFile.Name) && DoesPathExistsInManifest(previousPath, targetSubFolder) && !isFileKuduAppOffline)
                 {
                     _logger.Log("Deleting file: '{0}'", previousPath);
