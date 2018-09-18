@@ -24,7 +24,7 @@ namespace KuduSync.NET
             "-->" +
             "</body>" +
             "</html>";
-        private const string AppOfflineSetting = "KUDU_APP_OFFLINE_CREATION";
+        private const string AppOfflineSetting = "SCM_CREATE_APP_OFFLINE";
 
         static int Main(string[] args)
         {
@@ -41,9 +41,9 @@ namespace KuduSync.NET
                     using (var logger = GetLogger(kuduSyncOptions))
                     {
                         // The default behavior is to create the app_offline.htm page
-                        if (string.IsNullOrWhiteSpace(appOfflineSetting) || !appOfflineSetting.Equals("false", StringComparison.OrdinalIgnoreCase))
+                        if (string.IsNullOrWhiteSpace(appOfflineSetting) || !appOfflineSetting.Equals("0"))
                         {
-                            appOfflineCreated = PlaceAppOffline(kuduSyncOptions.To, logger);
+                            appOfflineCreated = CreateAppOffline(kuduSyncOptions.To, logger);
                         }
                         new KuduSync(kuduSyncOptions, logger, appOfflineCreated).Run();
                         if (appOfflineCreated)
@@ -84,13 +84,14 @@ namespace KuduSync.NET
             return exitCode;
         }
 
-        private static bool PlaceAppOffline(string toDirectory, Logger logger)
+        private static bool CreateAppOffline(string toDirectory, Logger logger)
         {
             var appOffline = Path.Combine(toDirectory, AppOfflineFileName);
             if (File.Exists(appOffline))
             {
                 return false;
             }
+
             try
             {
                 logger.Log("Creating " + AppOfflineFileName);
@@ -110,6 +111,7 @@ namespace KuduSync.NET
             {
                 return true;
             }
+
             try
             {
                 logger.Log("Deleting " + AppOfflineFileName);
