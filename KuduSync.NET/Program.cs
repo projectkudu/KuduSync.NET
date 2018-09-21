@@ -107,7 +107,8 @@ namespace KuduSync.NET
         private static bool RemoveAppOffline(string toDirectory, Logger logger)
         {
             var appOffline = Path.Combine(toDirectory, AppOfflineFileName);
-            if (!File.Exists(appOffline))
+            // If app_offline.htm does not exist or if it's overwritten, we don't have to delete it
+            if (!File.Exists(appOffline) || !File.ReadAllText(appOffline).Equals(AppOfflineFileContent))
             {
                 return true;
             }
