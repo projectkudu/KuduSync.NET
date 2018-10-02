@@ -5,7 +5,7 @@ namespace KuduSync.NET
 {
     internal static class OperationManager
     {
-        private const int DefaultRetries = 3;
+        private const int DefaultRetries = 10;
         private const int DefaultDelayBeforeRetry = 250; // 250 ms
 
         public static void Attempt(Action action, int retries = DefaultRetries, int delayBeforeRetry = DefaultDelayBeforeRetry)
