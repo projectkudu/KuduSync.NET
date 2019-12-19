@@ -8,6 +8,9 @@ namespace KuduSync.NET
     class Program
     {
         public const string AppOfflineFileName = "app_offline.htm";
+
+        // "Created by kudu" text is used by kudu to identify that this is kudusync's app_offline
+        // If this changes, kudu will need an update as well.
         private const string AppOfflineFileContent =
             "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">" +
             "<html xmlns=\"http://www.w3.org/1999/xhtml\" > " +
@@ -21,6 +24,7 @@ namespace KuduSync.NET
             "    this message from displaying (note: it will show a 'friendly' 404                                                       " +
             "    error if the content isn't of a certain size).                                                                          " +
             "                                                                                                                            " +
+            "    - Created by kudu                                                                                                       " +
             "-->" +
             "</body>" +
             "</html>";
