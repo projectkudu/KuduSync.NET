@@ -8,7 +8,7 @@ namespace KuduSync.NET
 {
     static class FileInfoBaseExtensions
     {
-        public static bool IsFullTextCompareFile(this FileInfoBase file, KuduSyncOptions kuduSyncOptions)
+        public static bool IsFullTextCompareFile(this IFileSystemInfo file, KuduSyncOptions kuduSyncOptions)
         {
             var matched = kuduSyncOptions.GetFullTextCompareFilePatterns()
                 .Any(fileMatchPattern => Regex.IsMatch(file.Name, WildCardToRegular(fileMatchPattern), RegexOptions.IgnoreCase));
@@ -21,7 +21,7 @@ namespace KuduSync.NET
             return "^" + Regex.Escape(value).Replace("\\?", ".").Replace("\\*", ".*") + "$";
         }        
 
-        public static string ComputeSha1(this FileInfoBase file)
+        public static string ComputeSha1(this IFileInfo file)
         {
             using (var fileStream = file.OpenRead())
             {

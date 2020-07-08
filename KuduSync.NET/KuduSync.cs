@@ -25,13 +25,15 @@ namespace KuduSync.NET
         private bool _whatIf;
         private KuduSyncOptions _options;
         private string _toBeDeletedDirectoryPath;
-        private List<Tuple<FileInfoBase, string, string>> _filesToCopyLast = new List<Tuple<FileInfoBase, string, string>>();
+        private List<Tuple<IFileInfo, string, string>> _filesToCopyLast = new List<Tuple<IFileInfo, string, string>>();
         private readonly bool _saveAppOffline;
+        private readonly IFileSystem _fileSystem;
 
-        public KuduSync(KuduSyncOptions options, Logger logger, bool saveAppOffline)
+        public KuduSync(KuduSyncOptions options, Logger logger, IFileSystem fileSystem, bool saveAppOffline)
         {
             _logger = logger;
             _options = options;
+            _fileSystem = fileSystem;
 
             _from = Path.GetFullPath(options.From);
             _to = Path.GetFullPath(options.To);
@@ -115,8 +117,10 @@ namespace KuduSync.NET
 
         public void Run()
         {
+
+
             _logger.Log("KuduSync.NET from: '{0}' to: '{1}'", _from, _to);
-            SmartCopy(_from, _to, _targetSubFolder, new DirectoryInfoWrapper(new DirectoryInfo(_from)), new DirectoryInfoWrapper(new DirectoryInfo(_to)));
+            SmartCopy(_from, _to, _targetSubFolder, new DirectoryInfoWrapper(_fileSystem,new DirectoryInfo(_from)), new DirectoryInfoWrapper(_fileSystem,new DirectoryInfo(_to)));
             CopyFilesToCopyLast();
 
             _nextManifest.SaveManifestFile();
@@ -127,8 +131,8 @@ namespace KuduSync.NET
         private void SmartCopy(string sourcePath,
                                string destinationPath,
                                string targetSubFolder,
-                               DirectoryInfoBase sourceDirectory,
-                               DirectoryInfoBase destinationDirectory)
+                               IDirectoryInfo sourceDirectory,
+                               IDirectoryInfo destinationDirectory)
         {
             if (IgnorePath(sourceDirectory))
             {
@@ -203,7 +207,7 @@ namespace KuduSync.NET
 
                 // if the file exists in the destination then only copy it again if it's
                 // last write time is different than the same file in the source (only if it changed)
-                FileInfoBase targetFile;
+                IFileInfo targetFile;
                 if (destFilesLookup.TryGetValue(sourceFile.Name, out targetFile) &&
                     sourceFile.LastWriteTimeUtc == targetFile.LastWriteTimeUtc)
                 {
@@ -234,7 +238,7 @@ namespace KuduSync.NET
 
             foreach (var sourceSubDirectory in sourceDirectoryLookup.Values)
             {
-                DirectoryInfoBase targetSubDirectory;
+                IDirectoryInfo targetSubDirectory;
                 if (!destDirectoryLookup.TryGetValue(sourceSubDirectory.Name, out targetSubDirectory))
                 {
                     string path = FileSystemHelpers.GetDestinationPath(sourcePath, destinationPath, sourceSubDirectory);
@@ -257,7 +261,7 @@ namespace KuduSync.NET
             }
         }
 
-        private void SmartDirectoryDelete(DirectoryInfoBase directory, string rootPath, string targetSubFolder)
+        private void SmartDirectoryDelete(IDirectoryInfo directory, string rootPath, string targetSubFolder)
         {
             if (IgnorePath(directory))
             {
@@ -296,7 +300,7 @@ namespace KuduSync.NET
             }
         }
 
-        private void SmartCopyFile(FileInfoBase sourceFile, string path)
+        private void SmartCopyFile(IFileInfo sourceFile, string path)
         {
             var destFile = CopyFileAndMoveOnFailure(sourceFile, path);
 
@@ -315,12 +319,12 @@ namespace KuduSync.NET
             destFile.Attributes = removeattr;
         }
 
-        private FileInfoBase CopyFileAndMoveOnFailure(FileInfoBase sourceFile, string destinationFilePath)
+        private IFileInfo CopyFileAndMoveOnFailure(IFileInfo sourceFile, string destinationFilePath)
         {
             return TryFileFuncAndMoveFileOnFailure(() => sourceFile.CopyTo(destinationFilePath, overwrite: true), destinationFilePath);
         }
 
-        private void SmartDeleteFile(FileInfoBase fileToDelete)
+        private void SmartDeleteFile(IFileInfo fileToDelete)
         {
             TryFileFuncAndMoveFileOnFailure(() =>
             {
@@ -329,7 +333,7 @@ namespace KuduSync.NET
             }, fileToDelete.FullName);
         }
 
-        private FileInfoBase TryFileFuncAndMoveFileOnFailure(Func<FileInfoBase> fileFunc, string destinationFilePath)
+        private IFileInfo TryFileFuncAndMoveFileOnFailure(Func<IFileInfo> fileFunc, string destinationFilePath)
         {
             // Use KUDUSYNC_TURNOFFTRYMOVEONERROR environment setting as a kill switch for this feature
             bool tryMoveOnError = String.IsNullOrEmpty(Environment.GetEnvironmentVariable("KUDUSYNC_TURNOFFTRYMOVEONERROR"));
@@ -385,7 +389,7 @@ namespace KuduSync.NET
             }
         }
 
-        private string ShorthandAttributes(FileSystemInfoBase sourceFile)
+        private string ShorthandAttributes(IFileInfo sourceFile)
         {
             var sb = new StringBuilder("[");
             var sfa = sourceFile.Attributes;
@@ -429,12 +433,12 @@ namespace KuduSync.NET
             return sb.ToString();
         }
 
-        private DirectoryInfoBase CreateDirectoryInfo(string path)
+        private IDirectoryInfo CreateDirectoryInfo(string path)
         {
-            return new DirectoryInfoWrapper(new DirectoryInfo(path));
+            return new DirectoryInfoWrapper(new FileSystem(), new DirectoryInfo(path));
         }
 
-        private bool IgnorePath(FileSystemInfoBase fileSystemInfoBase)
+        private bool IgnorePath(IFileSystemInfo fileSystemInfoBase)
         {
             return (_ignoreList.Contains(fileSystemInfoBase.Name)
                 || _wildcardIgnoreList.Any((name) => fileSystemInfoBase.Name.EndsWith(name, StringComparison.OrdinalIgnoreCase)));

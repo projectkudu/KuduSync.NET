@@ -1,22 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>KuduSync.NET</RootNamespace>
-    <AssemblyName>KuduSync.NET</AssemblyName>
-    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
+    <TargetFrameworks>net48;netcoreapp3.1</TargetFrameworks>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
     <AssemblyName>KuduSync.NET</AssemblyName>
     <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
     <Company>.NET Foundation</Company>
     <Product>$(AssemblyName)</Product>
     <Copyright>Copyright (c) .NET Foundation and contributors</Copyright>
-    <PackageId>$(AssemblyName)</PackageId>
     <PackageTags>File;FileCopy;Kudu</PackageTags>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageIcon>kudulogo.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/projectkudu/KuduSync.NET</PackageProjectUrl>
     <Authors>amitap</Authors>
+    <PackageDescription>Tool for syncing files for deployment, will only copy changed files and delete files that doesn't exists in the destination but only if they were part of the previous deployment.</PackageDescription>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>full</DebugType>
@@ -25,30 +22,41 @@
     <DebugType>pdbonly</DebugType>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="CommandLineParser" Version="1.9.3.34" PrivateAssets="All" />
-    <PackageReference Include="System.IO.Abstractions" Version="1.4.0.66" PrivateAssets="All" />
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" Version="1.0.0" />
+    <PackageReference Include="CommandLineParser" Version="2.8.0" PrivateAssets="All" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
-    <PackageReference Include="Nerdbank.GitVersioning" Version="3.2.7-beta">
+    <PackageReference Include="Nerdbank.GitVersioning" Version="3.1.91 ">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
   </ItemGroup>
-  <ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
     <Reference Include="System.Configuration"  />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
+    <PackageReference Include="System.IO.Abstractions" Version="7.1.10" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" Version="1.0.0" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.7.0" />
+    <PackageReference Include="System.IO.Abstractions" Version="12.0.4 " />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="images\" />
     <None Include="../kudulogo.png" Link="images\kudulogo.png" Pack="true" PackagePath="/" />
     <None Include="../LICENSE.txt" Pack="true" PackagePath="/" />
-    <None Include="bin\$(Configuration)\$(TargetFramework)\**" Pack="true" PackagePath="/tools" Condition=" '$(TargetFramework)' == 'net45' " />
+    <None Include="bin\$(Configuration)\$(TargetFramework)\**" Exclude="bin\$(Configuration)\$(TargetFramework)\publish\**" Pack="true" PackagePath="/tools" Condition=" '$(TargetFramework)' == 'net45' " />
   </ItemGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net45' ">
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <NoWarn>NU5128</NoWarn>
+    <PackageId>$(AssemblyName)</PackageId>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
+    <PackAsTool>true</PackAsTool>
+    <PackageId>KuduSync.Tool</PackageId>
+    <ToolCommandName>kudusync</ToolCommandName>
+    <PackageDescription>.NET Global $(PackageDescription).</PackageDescription>
   </PropertyGroup>
 </Project>
