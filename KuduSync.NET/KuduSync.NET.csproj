@@ -14,13 +14,31 @@
     <PackageProjectUrl>https://github.com/projectkudu/KuduSync.NET</PackageProjectUrl>
     <Authors>amitap</Authors>
     <PackageDescription>Tool for syncing files for deployment, will only copy changed files and delete files that doesn't exists in the destination but only if they were part of the previous deployment.</PackageDescription>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/projectkudu/KuduSync.NET.git</RepositoryUrl>
   </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net45' ">
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <NoWarn>NU5128</NoWarn>
+    <PackageId>$(AssemblyName)</PackageId>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
+    <PackAsTool>true</PackAsTool>
+    <PackageId>KuduSync.Tool</PackageId>
+    <ToolCommandName>kudusync</ToolCommandName>
+    <PackageDescription>.NET Global $(PackageDescription).</PackageDescription>
+  </PropertyGroup>
+
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>full</DebugType>
   </PropertyGroup>
+
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
   </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.8.0" PrivateAssets="All" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
@@ -44,19 +62,6 @@
     <Folder Include="images\" />
     <None Include="../kudulogo.png" Link="images\kudulogo.png" Pack="true" PackagePath="/" />
     <None Include="../LICENSE.txt" Pack="true" PackagePath="/" />
-    <None Include="bin\$(Configuration)\$(TargetFramework)\**" Exclude="bin\$(Configuration)\$(TargetFramework)\publish\**" Pack="true" PackagePath="/tools" Condition=" '$(TargetFramework)' == 'net45' " />
+    <None Include="bin/$(Configuration)/$(TargetFramework)/**" Exclude="bin/$(Configuration)/$(TargetFramework)/publish/**" Pack="true" PackagePath="/tools" Condition=" '$(TargetFramework)' == 'net45' " />
   </ItemGroup>
-
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net45' ">
-    <IncludeBuildOutput>false</IncludeBuildOutput>
-    <NoWarn>NU5128</NoWarn>
-    <PackageId>$(AssemblyName)</PackageId>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
-    <PackAsTool>true</PackAsTool>
-    <PackageId>KuduSync.Tool</PackageId>
-    <ToolCommandName>kudusync</ToolCommandName>
-    <PackageDescription>.NET Global $(PackageDescription).</PackageDescription>
-  </PropertyGroup>
 </Project>
