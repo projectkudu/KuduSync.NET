@@ -25,8 +25,8 @@
     }
   ],
   "devDependencies": {
-    "typescript": "0.8.0",
-    "mocha": "1.6.0",
-    "should": "1.2.1"
+    "mocha": "^8.0.1",
+    "should": "4.6.0",
+    "typescript": "0.8.0"
   }
 }
