@@ -8,7 +8,7 @@ namespace KuduSync.NET
 {
     internal static class FileSystemHelpers
     {
-        public static string GetDestinationPath(string sourceRootPath, string destinationRootPath, FileSystemInfoBase info)
+        public static string GetDestinationPath(string sourceRootPath, string destinationRootPath, IFileSystemInfo info)
         {
             string sourcePath = info.FullName;
             sourcePath = sourcePath.Substring(sourceRootPath.Length)
@@ -17,7 +17,7 @@ namespace KuduSync.NET
             return Path.Combine(destinationRootPath, sourcePath);
         }
 
-        public static IDictionary<string, FileInfoBase> GetFiles(DirectoryInfoBase info)
+        public static IDictionary<string, IFileInfo> GetFiles(IDirectoryInfo info)
         {
             if (info == null)
             {
@@ -26,18 +26,18 @@ namespace KuduSync.NET
             return info.GetFilesWithRetry().ToDictionary(f => f.Name, StringComparer.OrdinalIgnoreCase);
         }
 
-        public static bool IsEmpty(this DirectoryInfoBase info)
+        public static bool IsEmpty(this IDirectoryInfo info)
         {
             if (info == null)
             {
                 return true;
             }
 
-            FileSystemInfoBase[] fileSystemInfos = OperationManager.Attempt(() => info.GetFileSystemInfos());
+            IFileSystemInfo[] fileSystemInfos = OperationManager.Attempt(() => info.GetFileSystemInfos());
             return fileSystemInfos.Length == 0;
         }
 
-        public static IDictionary<string, DirectoryInfoBase> GetDirectories(DirectoryInfoBase info)
+        public static IDictionary<string, IDirectoryInfo> GetDirectories(IDirectoryInfo info)
         {
             if (info == null)
             {
@@ -48,7 +48,7 @@ namespace KuduSync.NET
 
         // Call DirectoryInfoBase.GetFiles under a retry loop to make the system
         // more resilient when some files are temporarily in use
-        public static FileInfoBase[] GetFilesWithRetry(this DirectoryInfoBase info)
+        public static IFileInfo[] GetFilesWithRetry(this IDirectoryInfo info)
         {
             return OperationManager.Attempt(() =>
             {

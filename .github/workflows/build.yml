@@ -1,0 +1,46 @@
+name: Build
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+jobs:
+  build:
+    name: Build
+    env:
+      TERM: xterm-256color
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    steps:
+      - name: Get the sources
+        uses: actions/checkout@v2
+
+      - name: Fetch all history for all tags and branches
+        run: git fetch --prune --unshallow
+
+      - name: Install .NET Core SDK 3.1.301
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '3.1.301'
+
+      - name: Build KuduSync.NET
+        run: |
+          dotnet build -p:Configuration=Release
+
+      - name: Create NuGet Packages
+        if: matrix.os == 'windows-latest'
+        shell: cmd
+        run: .\BuildNugetPackages.cmd
+
+      - uses: actions/upload-artifact@v2
+        if: matrix.os == 'windows-latest'
+        with:
+          name: nupkg
+          path: artifacts
+
+      - name: Test Windows
+        if: matrix.os == 'windows-latest'
+        shell: cmd
+        run: .\test.cmd
