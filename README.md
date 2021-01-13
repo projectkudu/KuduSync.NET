@@ -12,7 +12,7 @@ KuduSync.NET.exe -f [source path] -t [destination path] -n [path to next manifes
                  -p [path to current manifest path] -i <paths to ignore delimited by ;>
 ```
 
-The tool will sync files from the `[source path]` path to the `[destination path]` path using the manifest file in `[path to current manifest path]` to help determine what was added/removed and will write the new manifest file at path `[path to current manifest path]`.
+The tool will sync files from the `[source path]` path to the `[destination path]` path using the manifest file in `[path to current manifest path]` to help determine what was added/removed and will write the new manifest file at path `[path to next manifest path]`.
 Paths in `<paths to ignore>` will be ignored in the process
 
 ### License
