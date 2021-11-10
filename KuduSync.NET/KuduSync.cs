@@ -150,6 +150,21 @@ namespace KuduSync.NET
                 }
             }
 
+            var sourceDirectoryLookup = FileSystemHelpers.GetDirectories(sourceDirectory);
+            var destDirectoryLookup = FileSystemHelpers.GetDirectories(destinationDirectory);
+
+            foreach (var destSubDirectory in destDirectoryLookup.Values)
+            {
+                // If the directory doesn't exist in the source, only delete if:
+                // 1. We have no previous directory
+                // 2. We have a previous directory and the file exists there
+
+                if (!sourceDirectoryLookup.ContainsKey(destSubDirectory.Name))
+                {
+                    SmartDirectoryDelete(destSubDirectory, destinationPath, targetSubFolder);
+                }
+            }
+
             var destFilesLookup = FileSystemHelpers.GetFiles(destinationDirectory);
             var sourceFilesLookup = FileSystemHelpers.GetFiles(sourceDirectory);
             var appOfflinePath = Path.Combine(_to, Program.AppOfflineFileName);
@@ -215,21 +230,6 @@ namespace KuduSync.NET
                 // Otherwise, copy the file
                 _logger.Log("Copying file: '{0}'", details);
                 OperationManager.Attempt(() => SmartCopyFile(sourceFile, path));
-            }
-
-            var sourceDirectoryLookup = FileSystemHelpers.GetDirectories(sourceDirectory);
-            var destDirectoryLookup = FileSystemHelpers.GetDirectories(destinationDirectory);
-
-            foreach (var destSubDirectory in destDirectoryLookup.Values)
-            {
-                // If the directory doesn't exist in the source, only delete if:
-                // 1. We have no previous directory
-                // 2. We have a previous directory and the file exists there
-
-                if (!sourceDirectoryLookup.ContainsKey(destSubDirectory.Name))
-                {
-                    SmartDirectoryDelete(destSubDirectory, destinationPath, targetSubFolder);
-                }
             }
 
             foreach (var sourceSubDirectory in sourceDirectoryLookup.Values)
