@@ -1,7 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net48;netcoreapp3.1;net6.0</TargetFrameworks>
+    <TargetFrameworks Condition="$(NetFx) == ''">net48;netcoreapp3.1;net6.0</TargetFrameworks>
+    <TargetFrameworks Condition="$(NetFx) == 'true'">net48</TargetFrameworks>
+    <TargetFrameworks Condition="$(NetFx) == 'false'">netcoreapp3.1;net6.0</TargetFrameworks>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
     <AssemblyName>KuduSync.NET</AssemblyName>
     <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
@@ -16,6 +18,11 @@
     <PackageDescription>Tool for syncing files for deployment, will only copy changed files and delete files that doesn't exists in the destination but only if they were part of the previous deployment.</PackageDescription>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/projectkudu/KuduSync.NET.git</RepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net45' ">
@@ -24,7 +31,7 @@
     <PackageId>$(AssemblyName)</PackageId>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1'  or '$(TargetFramework)' == 'net6.0'">
+  <PropertyGroup Condition="$(NetFx) == 'false'">
     <PackAsTool>true</PackAsTool>
     <PackageId>KuduSync.Tool</PackageId>
     <ToolCommandName>kudusync</ToolCommandName>
@@ -41,7 +48,7 @@
 
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.8.0" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
     <PackageReference Include="Nerdbank.GitVersioning" Version="3.4.255">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
