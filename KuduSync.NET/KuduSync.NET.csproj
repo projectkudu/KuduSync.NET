@@ -55,7 +55,7 @@
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' or '$(TargetFramework)' == 'net6.0'">
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.7.0" />
-    <PackageReference Include="System.IO.Abstractions" Version="12.0.4 " />
+    <PackageReference Include="System.IO.Abstractions" Version="16.1.4 " />
   </ItemGroup>
 
   <ItemGroup>
