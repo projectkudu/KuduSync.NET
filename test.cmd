@@ -22,6 +22,11 @@ set KuduNetPath="\\..\\KuduSync.NET\\bin\\Release\\netcoreapp3.1\\KuduSync.NET.e
 call npm test
 if %errorlevel%==1 goto error_p
 
+echo Run net6.0 tests
+set KuduNetPath="\\..\\KuduSync.NET\\bin\\Release\\net6.0\\KuduSync.NET.exe"
+call npm test
+if %errorlevel%==1 goto error_p
+
 popd
 
 goto end
