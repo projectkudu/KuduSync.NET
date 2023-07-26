@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks Condition="$(NetFx) == ''">net48;netcoreapp3.1;net6.0</TargetFrameworks>
+    <TargetFrameworks Condition="$(NetFx) == ''">net48;net6.0;net7.0</TargetFrameworks>
     <TargetFrameworks Condition="$(NetFx) == 'true'">net48</TargetFrameworks>
-    <TargetFrameworks Condition="$(NetFx) == 'false'">netcoreapp3.1;net6.0</TargetFrameworks>
+    <TargetFrameworks Condition="$(NetFx) == 'false'">net6.0;net7.0</TargetFrameworks>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
     <AssemblyName>KuduSync.NET</AssemblyName>
     <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
@@ -25,7 +25,7 @@
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net45' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net48' ">
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <NoWarn>NU5128</NoWarn>
     <PackageId>$(AssemblyName)</PackageId>
@@ -55,12 +55,12 @@
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net48' ">
     <Reference Include="System.Configuration"  />
     <PackageReference Include="System.IO.Abstractions" Version="7.1.10" PrivateAssets="All" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" Version="1.0.2" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' or '$(TargetFramework)' == 'net6.0'">
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net48'">
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
     <PackageReference Include="System.IO.Abstractions" Version="16.1.4 " />
   </ItemGroup>
@@ -69,6 +69,6 @@
     <Folder Include="images\" />
     <None Include="../kudulogo.png" Link="images\kudulogo.png" Pack="true" PackagePath="/" />
     <None Include="../LICENSE.txt" Pack="true" PackagePath="/" />
-    <None Include="bin/$(Configuration)/$(TargetFramework)/**" Exclude="bin/$(Configuration)/$(TargetFramework)/publish/**" Pack="true" PackagePath="/tools" Condition=" '$(TargetFramework)' == 'net45' " />
+    <None Include="bin/$(Configuration)/$(TargetFramework)/**" Exclude="bin/$(Configuration)/$(TargetFramework)/publish/**" Pack="true" PackagePath="/tools" Condition=" '$(TargetFramework)' == 'net48' " />
   </ItemGroup>
 </Project>

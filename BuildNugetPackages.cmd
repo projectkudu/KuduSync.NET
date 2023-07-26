@@ -1,7 +1,7 @@
 @echo Off
 setlocal
 
-set netfx="net45"
+set netfx="net48"
 set project=".\KuduSync.NET\KuduSync.NET.csproj"
 set output=".\artifacts"
 
