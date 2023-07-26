@@ -2,6 +2,8 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Abstractions;
+using CommandLine.Text;
 
 namespace KuduSync.NET
 {
@@ -33,38 +35,37 @@ namespace KuduSync.NET
         static int Main(string[] args)
         {
             var stopwatch = Stopwatch.StartNew();
-            var kuduSyncOptions = new KuduSyncOptions();
             int exitCode = 0;
             var appOfflineCreated = false;
             var appOfflineSetting = Environment.GetEnvironmentVariable(AppOfflineSetting);
+            KuduSyncOptions kuduSyncOptions = new KuduSyncOptions();
             try
             {
-                ICommandLineParser parser = new CommandLineParser();
-                if (parser.ParseArguments(args, kuduSyncOptions))
-                {
-                    using (var logger = GetLogger(kuduSyncOptions))
-                    {
-                        // The default behavior is to create the app_offline.htm page
-                        if (string.IsNullOrWhiteSpace(appOfflineSetting) || !appOfflineSetting.Equals("0"))
+                Parser.Default.ParseArguments<KuduSyncOptions>(args)
+                    .WithParsed(parserResult =>
                         {
-                            appOfflineCreated = CreateAppOffline(kuduSyncOptions.To, logger);
-                        }
-                        new KuduSync(kuduSyncOptions, logger, appOfflineCreated).Run();
-                        if (appOfflineCreated)
-                        {
-                            if(!RemoveAppOffline(kuduSyncOptions.To, logger))
+                            kuduSyncOptions = parserResult;
+                            using (var logger = GetLogger(kuduSyncOptions))
                             {
-                                exitCode = 1;
+                                // The default behavior is to create the app_offline.htm page
+                                if (string.IsNullOrWhiteSpace(appOfflineSetting) || !appOfflineSetting.Equals("0"))
+                                {
+                                    appOfflineCreated = CreateAppOffline(kuduSyncOptions.To, logger);
+                                }
+
+                                new KuduSync(kuduSyncOptions, logger, new FileSystem(), appOfflineCreated).Run();
+                                if (appOfflineCreated)
+                                {
+                                    if (!RemoveAppOffline(kuduSyncOptions.To, logger))
+                                    {
+                                        exitCode = 1;
+                                    }
+
+                                    appOfflineCreated = false;
+                                }
                             }
-                            appOfflineCreated = false;
                         }
-                    }
-                }
-                else
-                {
-                    Console.Error.WriteLine(kuduSyncOptions.GetUsage());
-                    return 1;
-                }
+                    );
             }
             catch (Exception ex)
             {

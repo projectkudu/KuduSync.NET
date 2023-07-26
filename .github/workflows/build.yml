@@ -1,0 +1,48 @@
+name: Build
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - master
+jobs:
+  build:
+    name: Build
+    env:
+      TERM: xterm-256color
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Install .NET SDK 6.0.x
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Install .NET global.json
+        uses: actions/setup-dotnet@v3
+
+      - name: Build KuduSync.NET
+        run: |
+          dotnet build -p:Configuration=Release
+
+      - name: Create NuGet Packages
+        if: matrix.os == 'windows-latest'
+        shell: cmd
+        run: .\BuildNugetPackages.cmd
+
+      - uses: actions/upload-artifact@v3
+        if: matrix.os == 'windows-latest'
+        with:
+          name: nupkg
+          path: artifacts
+
+      - name: Test Windows
+        if: matrix.os == 'windows-latest'
+        shell: cmd
+        run: .\test.cmd
